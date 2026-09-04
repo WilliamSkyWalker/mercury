@@ -1,8 +1,8 @@
 <template>
   <div class="pm-page">
     <div style="margin-bottom: 16px; display: flex; justify-content: space-between;">
-      <a-input-search v-model:value="searchText" placeholder="Search plans" style="width: 300px" @search="loadPlans" />
-      <a-button type="primary" @click="openDrawer()">Create Plan</a-button>
+      <a-input-search v-model:value="searchText" :placeholder="t('plans.search')" style="width: 300px" @search="loadPlans" />
+      <a-button type="primary" @click="openDrawer()">{{ t('plans.create') }}</a-button>
     </div>
 
     <a-table :data-source="plans" :columns="columns" :loading="loading" row-key="id">
@@ -12,9 +12,9 @@
         </template>
         <template v-if="column.dataIndex === 'action'">
           <a-space>
-            <a-button type="primary" size="small" :loading="runLoading" @click="onRun(record)">Run</a-button>
-            <a-popconfirm title="Delete?" @confirm="onDelete(record.id)">
-              <a style="color: #ff4d4f">Delete</a>
+            <a-button type="primary" size="small" :loading="runLoading" @click="onRun(record)">{{ t('common.run') }}</a-button>
+            <a-popconfirm :title="t('schedules.deleteConfirm')" @confirm="onDelete(record.id)">
+              <a style="color: #ff4d4f">{{ t('common.delete') }}</a>
             </a-popconfirm>
           </a-space>
         </template>
@@ -24,24 +24,24 @@
     <!-- Edit/Create Drawer -->
     <a-drawer
       v-model:open="drawer.visible"
-      :title="drawer.editId ? 'Edit Plan' : 'Create Plan'"
+      :title="drawer.editId ? t('plans.edit') : t('plans.create')"
       :width="drawerWidth"
       :bodyStyle="{ padding: '16px 24px' }"
     >
       <template #extra>
-        <a-button type="primary" :loading="saveLoading" @click="onSave">Save</a-button>
+        <a-button type="primary" :loading="saveLoading" @click="onSave">{{ t('common.save') }}</a-button>
       </template>
 
       <a-form layout="vertical">
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item label="Name">
-              <a-input v-model:value="drawer.name" placeholder="Plan name" />
+            <a-form-item :label="t('common.name')">
+              <a-input v-model:value="drawer.name" :placeholder="t('plans.planName')" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="Environment">
-              <a-select v-model:value="drawer.envId" allow-clear placeholder="Select env" style="width: 100%">
+            <a-form-item :label="t('common.environment')">
+              <a-select v-model:value="drawer.envId" allow-clear :placeholder="t('plans.selectEnv')" style="width: 100%">
                 <a-select-option v-for="e in envs" :key="e.id" :value="e.id">{{ e.name }}</a-select-option>
               </a-select>
             </a-form-item>
@@ -49,38 +49,38 @@
         </a-row>
         <a-row :gutter="16">
           <a-col :span="8">
-            <a-form-item label="Serial Execution">
+            <a-form-item :label="t('plans.serialExecution')">
               <a-switch v-model:checked="drawer.isSerial" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
-            <a-form-item label="Retry Count">
+            <a-form-item :label="t('plans.retryCount')">
               <a-input-number v-model:value="drawer.retryCount" :min="0" :max="5" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
-            <a-form-item label="Notify on Failure">
+            <a-form-item :label="t('plans.notifyOnFailure')">
               <a-switch v-model:checked="drawer.notifyOnFailure" />
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item label="Group Robot Webhook">
+        <a-form-item :label="t('plans.groupWebhook')">
           <a-input v-model:value="drawer.feishuWebhook" placeholder="https://open.feishu.cn/..." />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item label="Phone alert on failure (Flashcat)">
+            <a-form-item :label="t('plans.phoneOnFailure')">
               <a-switch v-model:checked="drawer.phoneOnFailure" />
               <span style="margin-left: 8px; color: var(--text-3); font-size: 12px;">
-                Only fires for scheduled runs (manual runs never page).
+                {{ t('plans.scheduledOnlyHint') }}
               </span>
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="Mute phone alert">
+            <a-form-item :label="t('plans.mutePhone')">
               <a-switch v-model:checked="drawer.phoneMuted" />
               <span style="margin-left: 8px; color: var(--text-3); font-size: 12px;">
-                Suppresses Flashcat phone alerts (use during maintenance).
+                {{ t('plans.mutePhoneHint') }}
               </span>
             </a-form-item>
           </a-col>
@@ -91,24 +91,24 @@
       <template v-if="drawer.editId">
         <a-divider />
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-          <h3 style="margin: 0;">Test Cases ({{ drawer.cases.length }})</h3>
+          <h3 style="margin: 0;">{{ t('plans.testCasesCount', { count: drawer.cases.length }) }}</h3>
           <a-space>
             <a-button size="small" @click="openSyncModal">
-              <SyncOutlined /> Sync
+              <SyncOutlined /> {{ t('common.sync') }}
             </a-button>
             <a-button size="small" @click="openAddCasesModal">
-              <PlusOutlined /> Add Cases
+              <PlusOutlined /> {{ t('plans.addCases') }}
             </a-button>
           </a-space>
         </div>
-        <a-spin :spinning="orderSaving" tip="Saving order...">
+        <a-spin :spinning="orderSaving" :tip="t('plans.savingOrder')">
           <table class="drag-case-table">
             <thead>
               <tr>
                 <th style="width: 30px"></th>
                 <th style="width: 40px">#</th>
-                <th style="width: 70px">Method</th>
-                <th>Name</th>
+                <th style="width: 70px">{{ t('common.method') }}</th>
+                <th>{{ t('common.name') }}</th>
                 <th>URL</th>
                 <th style="width: 70px"></th>
               </tr>
@@ -127,7 +127,7 @@
                   <td><span :class="['pm-method', `pm-method-${element.method.toLowerCase()}`]">{{ element.method }}</span></td>
                   <td class="ellipsis-cell">{{ element.case_name }}</td>
                   <td class="ellipsis-cell">{{ element.url }}</td>
-                  <td><a style="color: #f93e3e" @click="onRemoveSingleCase(element.id)">Remove</a></td>
+                  <td><a style="color: #f93e3e" @click="onRemoveSingleCase(element.id)">{{ t('common.remove') }}</a></td>
                 </tr>
               </template>
             </draggable>
@@ -137,9 +137,9 @@
     </a-drawer>
 
     <!-- Sync Modal -->
-    <a-modal v-model:open="syncModal.visible" title="Sync Cases" :confirm-loading="syncApplying" @ok="onApplySync" width="700px" ok-text="Sync Selected">
+    <a-modal v-model:open="syncModal.visible" :title="t('plans.syncCases')" :confirm-loading="syncApplying" @ok="onApplySync" width="700px" :ok-text="t('plans.syncSelected')">
       <a-spin :spinning="syncModal.loading">
-        <a-empty v-if="!syncModal.loading && !syncModal.diffs.length" description="All cases are up to date" />
+        <a-empty v-if="!syncModal.loading && !syncModal.diffs.length" :description="t('plans.allUpToDate')" />
         <div v-else>
           <div v-for="diff in syncModal.diffs" :key="diff.plan_case_id" class="sync-diff-item">
             <div class="sync-diff-header">
@@ -149,17 +149,17 @@
               />
               <span :class="['pm-method', `pm-method-${diff.method.toLowerCase()}`]" style="margin: 0 8px;">{{ diff.method }}</span>
               <span style="font-weight: 500;">{{ diff.case_name }}</span>
-              <a-tag color="orange" style="margin-left: 8px;">{{ Object.keys(diff.changed_fields).length }} changed</a-tag>
+              <a-tag color="orange" style="margin-left: 8px;">{{ t('plans.changedCount', { count: Object.keys(diff.changed_fields).length }) }}</a-tag>
             </div>
             <div class="sync-diff-fields">
               <div v-for="(change, field) in diff.changed_fields" :key="field" class="sync-diff-field">
                 <div class="sync-diff-field-name">{{ field }}</div>
                 <div class="sync-diff-old">
-                  <span class="sync-label">old:</span>
+                  <span class="sync-label">{{ t('plans.old') }}</span>
                   <pre>{{ formatDiffValue(change.old) }}</pre>
                 </div>
                 <div class="sync-diff-new">
-                  <span class="sync-label">new:</span>
+                  <span class="sync-label">{{ t('plans.new') }}</span>
                   <pre>{{ formatDiffValue(change.new) }}</pre>
                 </div>
               </div>
@@ -170,11 +170,11 @@
     </a-modal>
 
     <!-- Add Cases Modal -->
-    <a-modal v-model:open="addCasesModal.visible" title="Add Cases" :confirm-loading="addCasesLoading" @ok="onAddCases" width="600px">
-      <a-input-search v-model:value="addCasesModal.search" placeholder="Search cases" style="margin-bottom: 12px" @search="searchCasesForAdd" />
+    <a-modal v-model:open="addCasesModal.visible" :title="t('plans.addCases')" :confirm-loading="addCasesLoading" @ok="onAddCases" width="600px">
+      <a-input-search v-model:value="addCasesModal.search" :placeholder="t('plans.searchCases')" style="margin-bottom: 12px" @search="searchCasesForAdd" />
       <a-table
         :data-source="addCasesModal.cases"
-        :columns="[{ title: 'Method', dataIndex: 'method', width: 80 }, { title: 'Name', dataIndex: 'case_name' }]"
+        :columns="[{ title: t('common.method'), dataIndex: 'method', width: 80 }, { title: t('common.name'), dataIndex: 'case_name' }]"
         :row-selection="{ selectedRowKeys: addCasesModal.selectedIds, onChange: (keys: any) => addCasesModal.selectedIds = keys }"
         row-key="id"
         size="small"
@@ -186,6 +186,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { PlusOutlined, HolderOutlined, SyncOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import draggable from 'vuedraggable'
@@ -196,6 +197,7 @@ import { useProjectStore } from '../stores/project.ts'
 import { useLoading } from '../composables/useLoading.ts'
 
 const projectStore = useProjectStore()
+const { t } = useI18n()
 
 const envStore = useEnvStore()
 const envs = computed(() => envStore.envs)
@@ -205,14 +207,14 @@ const plans = ref<Testplan[]>([])
 const loading = ref(false)
 const searchText = ref('')
 
-const columns = [
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Env', dataIndex: 'env_name', width: 120 },
-  { title: 'Cases', dataIndex: 'case_count', width: 80 },
-  { title: 'Serial', dataIndex: 'is_serial', width: 80 },
-  { title: 'Updated', dataIndex: 'updated_at', width: 180 },
-  { title: 'Action', dataIndex: 'action', width: 150 },
-]
+const columns = computed(() => [
+  { title: t('common.name'), dataIndex: 'name' },
+  { title: t('executions.env'), dataIndex: 'env_name', width: 120 },
+  { title: t('common.cases'), dataIndex: 'case_count', width: 80 },
+  { title: t('plans.serial'), dataIndex: 'is_serial', width: 80 },
+  { title: t('common.updated'), dataIndex: 'updated_at', width: 180 },
+  { title: t('common.action'), dataIndex: 'action', width: 150 },
+])
 
 const drawer = reactive({
   visible: false, editId: null as number | null,
@@ -258,7 +260,7 @@ async function openDrawer(record?: Testplan) {
 }
 
 const [onSave, saveLoading] = useLoading(async () => {
-  if (!drawer.name) { message.warning('Name is required'); return }
+  if (!drawer.name) { message.warning(t('common.requiredName')); return }
   const data: any = {
     name: drawer.name, env: drawer.envId, is_serial: drawer.isSerial,
     retry_count: drawer.retryCount, feishu_webhook: drawer.feishuWebhook,
@@ -267,26 +269,26 @@ const [onSave, saveLoading] = useLoading(async () => {
   }
   if (drawer.editId) {
     await testplanApi.update(drawer.editId, data)
-    message.success('Saved')
+    message.success(t('common.saved'))
   } else {
     data.project = projectStore.currentProjectId
     const created = await testplanApi.create(data)
     drawer.editId = created.id
-    message.success('Created')
+    message.success(t('common.createdMessage'))
   }
   loadPlans()
 })
 
 const [onDelete, deleteLoading] = useLoading(async (id: number) => {
   await testplanApi.delete(id)
-  message.success('Deleted')
+  message.success(t('common.deleted'))
   loadPlans()
 })
 
 const [onRun, runLoading] = useLoading(async (record: Testplan) => {
   try {
     const res = await testplanApi.run(record.id, record.env ?? undefined)
-    message.success(`Execution started: ${res.task_id}`)
+    message.success(t('plans.executionStarted', { taskId: res.task_id }))
   } catch { /* handled by interceptor */ }
 })
 
@@ -304,9 +306,9 @@ async function searchCasesForAdd() {
 }
 
 const [onAddCases, addCasesLoading] = useLoading(async () => {
-  if (!addCasesModal.selectedIds.length) { message.warning('Select cases'); return }
+  if (!addCasesModal.selectedIds.length) { message.warning(t('plans.selectCases')); return }
   await testplanApi.addCases(drawer.editId!, addCasesModal.selectedIds)
-  message.success('Cases added')
+  message.success(t('plans.casesAdded'))
   addCasesModal.visible = false
   addCasesModal.selectedIds = []
   drawer.cases = await testplanApi.getCases(drawer.editId!)
@@ -321,7 +323,7 @@ async function onDragEnd() {
   try {
     await testplanApi.updateCaseOrder(drawer.editId!, ordering)
   } catch {
-    message.error('Failed to save order')
+    message.error(t('plans.orderSaveFailed'))
   } finally {
     orderSaving.value = false
   }
@@ -329,7 +331,7 @@ async function onDragEnd() {
 
 async function onRemoveSingleCase(planCaseId: number) {
   await testplanApi.removeCases(drawer.editId!, [planCaseId])
-  message.success('Removed')
+  message.success(t('common.removedMessage'))
   drawer.cases = await testplanApi.getCases(drawer.editId!)
   loadPlans()
 }
@@ -358,14 +360,14 @@ function toggleSyncSelect(id: number, checked: boolean) {
 
 function formatDiffValue(val: any): string {
   if (val === null || val === undefined) return ''
-  if (typeof val === 'string') return val || '(empty)'
+  if (typeof val === 'string') return val || t('common.empty')
   return JSON.stringify(val, null, 2)
 }
 
 const [onApplySync, syncApplying] = useLoading(async () => {
-  if (!syncModal.selectedIds.length) { message.warning('Select cases to sync'); return }
+  if (!syncModal.selectedIds.length) { message.warning(t('plans.selectCasesToSync')); return }
   await testplanApi.applySync(drawer.editId!, syncModal.selectedIds)
-  message.success(`Synced ${syncModal.selectedIds.length} cases`)
+  message.success(t('plans.syncedCases', { count: syncModal.selectedIds.length }))
   syncModal.visible = false
   drawer.cases = await testplanApi.getCases(drawer.editId!)
 })

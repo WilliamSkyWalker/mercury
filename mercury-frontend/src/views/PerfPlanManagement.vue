@@ -3,11 +3,11 @@
     <div style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
       <a-input-search
         v-model:value="searchText"
-        placeholder="Search perf plans"
+        :placeholder="t('perf.searchPlans')"
         style="width: 300px"
         @search="loadPlans"
       />
-      <a-button type="primary" @click="openDrawer()">Create Plan</a-button>
+      <a-button type="primary" @click="openDrawer()">{{ t('perf.createPlan') }}</a-button>
     </div>
 
     <a-table
@@ -30,10 +30,10 @@
         </template>
         <template v-if="column.dataIndex === 'action'">
           <a-space>
-            <a-button type="primary" size="small" @click="openRunDialog(record)">Run</a-button>
-            <a @click="goToHistory(record)">History</a>
-            <a-popconfirm title="Delete this plan?" @confirm="onDelete(record.id)">
-              <a style="color: #ff4d4f">Delete</a>
+            <a-button type="primary" size="small" @click="openRunDialog(record)">{{ t('common.run') }}</a-button>
+            <a @click="goToHistory(record)">{{ t('common.history') }}</a>
+            <a-popconfirm :title="t('perf.deletePlanConfirm')" @confirm="onDelete(record.id)">
+              <a style="color: #ff4d4f">{{ t('common.delete') }}</a>
             </a-popconfirm>
           </a-space>
         </template>
@@ -43,27 +43,27 @@
     <!-- ───── Create/Edit Drawer ───── -->
     <a-drawer
       v-model:open="drawer.visible"
-      :title="drawer.editId ? `Edit Plan: ${drawer.name}` : 'Create Plan'"
+      :title="drawer.editId ? t('perf.editPlan', { name: drawer.name }) : t('perf.createPlan')"
       :width="drawerWidth"
       :bodyStyle="{ padding: '16px 24px' }"
     >
       <template #extra>
-        <a-button type="primary" :loading="saveLoading" @click="onSave">Save</a-button>
+        <a-button type="primary" :loading="saveLoading" @click="onSave">{{ t('common.save') }}</a-button>
       </template>
 
       <a-form layout="vertical">
         <a-row :gutter="16">
           <a-col :span="14">
-            <a-form-item label="Name" required>
-              <a-input v-model:value="drawer.name" placeholder="Plan name" />
+            <a-form-item :label="t('common.name')" required>
+              <a-input v-model:value="drawer.name" :placeholder="t('plans.planName')" />
             </a-form-item>
           </a-col>
           <a-col :span="10">
-            <a-form-item label="Environment">
+            <a-form-item :label="t('common.environment')">
               <a-select
                 v-model:value="drawer.envId"
                 allow-clear
-                placeholder="Select env"
+                :placeholder="t('plans.selectEnv')"
                 style="width: 100%"
               >
                 <a-select-option v-for="e in envs" :key="e.id" :value="e.id">
@@ -74,39 +74,39 @@
           </a-col>
         </a-row>
 
-        <a-form-item label="Description">
-          <a-input v-model:value="drawer.description" placeholder="(optional)" />
+        <a-form-item :label="t('common.description')">
+          <a-input v-model:value="drawer.description" :placeholder="t('common.optional')" />
         </a-form-item>
 
         <a-row :gutter="16">
           <a-col :span="8">
-            <a-form-item label="Target RPS">
+            <a-form-item :label="t('perf.targetRps')">
               <a-input-number v-model:value="drawer.targetRate" :min="1" style="width: 100%" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
-            <a-form-item label="Duration (s)">
+            <a-form-item :label="`${t('common.duration')} (s)`">
               <a-input-number v-model:value="drawer.durationSecs" :min="1" style="width: 100%" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
-            <a-form-item label="Max VUs">
+            <a-form-item :label="t('perf.maxVus')">
               <a-input-number v-model:value="drawer.maxVus" :min="1" style="width: 100%" />
             </a-form-item>
           </a-col>
         </a-row>
 
-        <a-form-item label="Notify Webhook (Feishu)">
-          <a-input v-model:value="drawer.notifyWebhook" placeholder="(optional)" />
+        <a-form-item :label="t('perf.notifyWebhook')">
+          <a-input v-model:value="drawer.notifyWebhook" :placeholder="t('common.optional')" />
         </a-form-item>
         <a-row :gutter="16">
           <a-col :span="12">
-            <a-form-item label="Notify on Completion">
+            <a-form-item :label="t('perf.notifyCompletion')">
               <a-switch v-model:checked="drawer.notifyOnCompletion" />
             </a-form-item>
           </a-col>
           <a-col :span="12">
-            <a-form-item label="Notify on Failure">
+            <a-form-item :label="t('perf.notifyFailure')">
               <a-switch v-model:checked="drawer.notifyOnFailure" />
             </a-form-item>
           </a-col>
@@ -119,9 +119,9 @@
 
         <!-- Account pool -->
         <div style="margin-bottom: 16px;">
-          <h3 style="margin: 0 0 8px;">Account Pool</h3>
+          <h3 style="margin: 0 0 8px;">{{ t('perf.accountPool') }}</h3>
           <div style="font-size: 12px; color: var(--text-3); margin-bottom: 8px;">
-            CSV/JSON file. Each VU picks one row (round-robin) at startup; the row's columns become VU-local variables. Use this when each VU needs to login as a different user.
+            {{ t('perf.accountPoolHelp') }}
           </div>
           <a-space>
             <a-upload
@@ -131,7 +131,7 @@
             >
               <a-button>
                 <UploadOutlined />
-                {{ drawer.accountFileKey ? 'Replace File' : 'Upload File' }}
+                {{ drawer.accountFileKey ? t('perf.replaceFile') : t('common.uploadFile') }}
               </a-button>
             </a-upload>
             <span v-if="drawer.accountFileKey" style="font-size: 12px; color: var(--text-3);">
@@ -145,18 +145,18 @@
         <!-- Setup cases -->
         <div style="margin-bottom: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-            <h3 style="margin: 0;">Setup Cases ({{ setupCases.length }})</h3>
+            <h3 style="margin: 0;">{{ t('perf.setupCases', { count: setupCases.length }) }}</h3>
             <a-space>
               <a-button size="small" @click="syncSnapshots">
-                <SyncOutlined /> Sync
+                <SyncOutlined /> {{ t('common.sync') }}
               </a-button>
               <a-button size="small" @click="openAddCases('setup')">
-                <PlusOutlined /> Add
+                <PlusOutlined /> {{ t('common.add') }}
               </a-button>
             </a-space>
           </div>
           <div style="font-size: 12px; color: var(--text-3); margin-bottom: 8px;">
-            Run once per VU at startup, in order. Typical use: login → get token. setVar results persist as that VU's baseline for all subsequent transactions.
+            {{ t('perf.setupHelp') }}
           </div>
           <a-table
             :data-source="setupCases"
@@ -176,12 +176,12 @@
                     <a-tag v-if="record.data_file_s3_key" color="blue" style="cursor: pointer">
                       {{ record.data_mode }}
                     </a-tag>
-                    <a v-else style="font-size: 12px;">+ Bind File</a>
+                    <a v-else style="font-size: 12px;">{{ t('perf.bindFile') }}</a>
                   </a-upload>
                 </a-space>
               </template>
               <template v-if="column.dataIndex === 'action'">
-                <a style="color: #ff4d4f" @click="removeCase(record.id)">Remove</a>
+                <a style="color: #ff4d4f" @click="removeCase(record.id)">{{ t('common.remove') }}</a>
               </template>
             </template>
           </a-table>
@@ -191,13 +191,13 @@
 
         <!-- Transactions -->
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-          <h3 style="margin: 0;">Transactions ({{ drawer.transactions.length }})</h3>
+          <h3 style="margin: 0;">{{ t('perf.transactionsCount', { count: drawer.transactions.length }) }}</h3>
           <a-button size="small" @click="addTransaction">
-            <PlusOutlined /> Add Transaction
+            <PlusOutlined /> {{ t('perf.addTransaction') }}
           </a-button>
         </div>
         <div style="font-size: 12px; color: var(--text-3); margin-bottom: 12px;">
-          Each transaction is a chain of cases run sequentially. The driver weighted-picks a transaction per arrival tick. setVar mutations within a transaction chain across its cases, but reset between transactions.
+          {{ t('perf.transactionHelp') }}
         </div>
 
         <div v-for="(tx, idx) in drawer.transactions" :key="tx.name" class="tx-block">
@@ -206,16 +206,16 @@
               v-model:value="tx.name"
               size="small"
               style="width: 180px"
-              placeholder="Transaction name"
+              :placeholder="t('perf.transactionName')"
               @change="markTxRename(idx, tx.name)"
             />
-            <span style="font-size: 12px; color: var(--text-3);">Weight:</span>
+            <span style="font-size: 12px; color: var(--text-3);">{{ t('perf.weight') }}</span>
             <a-input-number v-model:value="tx.weight" :min="1" size="small" style="width: 80px" />
             <a-button size="small" @click="openAddCases('transaction', tx.name)">
-              <PlusOutlined /> Add Case
+              <PlusOutlined /> {{ t('perf.addCase') }}
             </a-button>
-            <a-popconfirm title="Remove this transaction (cases will be detached)?" @confirm="removeTransaction(idx)">
-              <a style="color: #ff4d4f; font-size: 12px;">Remove</a>
+            <a-popconfirm :title="t('perf.removeTransactionConfirm')" @confirm="removeTransaction(idx)">
+              <a style="color: #ff4d4f; font-size: 12px;">{{ t('common.remove') }}</a>
             </a-popconfirm>
           </div>
           <a-table
@@ -236,11 +236,11 @@
                   <a-tag v-if="record.data_file_s3_key" color="blue" style="cursor: pointer">
                     {{ record.data_mode }}
                   </a-tag>
-                  <a v-else style="font-size: 12px;">+ Bind File</a>
+                  <a v-else style="font-size: 12px;">{{ t('perf.bindFile') }}</a>
                 </a-upload>
               </template>
               <template v-if="column.dataIndex === 'action'">
-                <a style="color: #ff4d4f" @click="removeCase(record.id)">Remove</a>
+                <a style="color: #ff4d4f" @click="removeCase(record.id)">{{ t('common.remove') }}</a>
               </template>
             </template>
           </a-table>
@@ -251,19 +251,22 @@
     <!-- ───── Add cases modal ───── -->
     <a-modal
       v-model:open="addCasesModal.visible"
-      :title="`Add ${addCasesModal.role === 'setup' ? 'Setup' : 'Transaction'} Cases${addCasesModal.transactionName ? ' to ' + addCasesModal.transactionName : ''}`"
+      :title="t('perf.addCasesTitle', {
+        role: addCasesModal.role === 'setup' ? t('perf.setupRole') : t('perf.transactionRole'),
+        target: addCasesModal.transactionName ? t('perf.toTransaction', { name: addCasesModal.transactionName }) : '',
+      })"
       :width="700"
       @ok="confirmAddCases"
     >
       <a-input-search
         v-model:value="addCasesModal.search"
-        placeholder="Search testcases by name"
+        :placeholder="t('perf.searchCases')"
         style="margin-bottom: 12px;"
         @search="reloadAvailableCases"
       />
       <a-table
         :data-source="addCasesModal.available"
-        :columns="addCasesModal.columns"
+        :columns="addCasesColumns"
         :row-selection="{ selectedRowKeys: addCasesModal.selectedIds, onChange: (keys: any) => (addCasesModal.selectedIds = keys) }"
         row-key="id"
         :pagination="addCasesPagination"
@@ -275,27 +278,27 @@
     <!-- ───── Run trigger modal ───── -->
     <a-modal
       v-model:open="runModal.visible"
-      :title="`Run ${runModal.planName}`"
+      :title="t('perf.runPlan', { name: runModal.planName })"
       @ok="confirmRun"
       :confirm-loading="runModal.loading"
     >
       <a-form layout="vertical">
         <div style="margin-bottom: 12px; font-size: 12px; color: var(--text-3);">
-          Leave fields blank to use plan defaults.
+          {{ t('perf.defaultsHint') }}
         </div>
         <a-row :gutter="16">
           <a-col :span="8">
-            <a-form-item :label="`Target RPS (default ${runModal.defaults.target_rate})`">
+            <a-form-item :label="t('perf.targetDefault', { value: runModal.defaults.target_rate })">
               <a-input-number v-model:value="runModal.target_rate" :min="1" style="width: 100%" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
-            <a-form-item :label="`Duration (default ${runModal.defaults.duration_secs}s)`">
+            <a-form-item :label="t('perf.durationDefault', { value: runModal.defaults.duration_secs })">
               <a-input-number v-model:value="runModal.duration_secs" :min="1" style="width: 100%" />
             </a-form-item>
           </a-col>
           <a-col :span="8">
-            <a-form-item :label="`Max VUs (default ${runModal.defaults.max_vus})`">
+            <a-form-item :label="t('perf.maxVusDefault', { value: runModal.defaults.max_vus })">
               <a-input-number v-model:value="runModal.max_vus" :min="1" style="width: 100%" />
             </a-form-item>
           </a-col>
@@ -307,6 +310,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import { PlusOutlined, SyncOutlined, UploadOutlined } from '@ant-design/icons-vue'
@@ -317,6 +321,7 @@ import { useProjectStore } from '../stores/project.ts'
 import { useLoading } from '../composables/useLoading.ts'
 
 const router = useRouter()
+const { t } = useI18n()
 const projectStore = useProjectStore()
 const envStore = useEnvStore()
 const envs = computed(() => envStore.envs)
@@ -348,17 +353,17 @@ function onAddCasesTableChange(p: any) {
   addCasesPagination.pageSize = p.pageSize
 }
 
-const columns = [
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Env', dataIndex: 'env_name', width: 140 },
+const columns = computed(() => [
+  { title: t('common.name'), dataIndex: 'name' },
+  { title: t('executions.env'), dataIndex: 'env_name', width: 140 },
   { title: 'RPS', dataIndex: 'rate', width: 80 },
-  { title: 'Duration', dataIndex: 'duration', width: 90 },
-  { title: 'Max VUs', dataIndex: 'max_vus', width: 80 },
-  { title: 'Transactions', dataIndex: 'transaction_count', width: 100 },
-  { title: 'Cases', dataIndex: 'case_count', width: 80 },
-  { title: 'Updated', dataIndex: 'updated_at', width: 180 },
-  { title: 'Action', dataIndex: 'action', width: 220 },
-]
+  { title: t('common.duration'), dataIndex: 'duration', width: 90 },
+  { title: t('perf.maxVus'), dataIndex: 'max_vus', width: 100 },
+  { title: t('perf.transactions'), dataIndex: 'transaction_count', width: 100 },
+  { title: t('common.cases'), dataIndex: 'case_count', width: 80 },
+  { title: t('common.updated'), dataIndex: 'updated_at', width: 180 },
+  { title: t('common.action'), dataIndex: 'action', width: 220 },
+])
 
 async function loadPlans() {
   loading.value = true
@@ -396,12 +401,12 @@ function transactionCases(name: string) {
   return drawer.cases.filter((c) => c.role === 'transaction' && c.transaction_name === name).sort((a, b) => a.sort_order - b.sort_order)
 }
 
-const caseColumns = [
+const caseColumns = computed(() => [
   { title: '#', dataIndex: 'sort_order', width: 50 },
-  { title: 'Name', dataIndex: 'case_name' },
-  { title: 'Data', dataIndex: 'data', width: 130 },
-  { title: 'Action', dataIndex: 'action', width: 80 },
-]
+  { title: t('common.name'), dataIndex: 'case_name' },
+  { title: t('common.data'), dataIndex: 'data', width: 130 },
+  { title: t('common.action'), dataIndex: 'action', width: 80 },
+])
 
 async function openDrawer(record?: PerfPlanListItem) {
   await envStore.fetchEnvs()
@@ -441,7 +446,7 @@ async function openDrawer(record?: PerfPlanListItem) {
 
 const [onSave, saveLoading] = useLoading(async () => {
   if (!drawer.name) {
-    message.warning('Name is required')
+    message.warning(t('common.requiredName'))
     return
   }
   const payload: any = {
@@ -459,11 +464,11 @@ const [onSave, saveLoading] = useLoading(async () => {
   }
   if (drawer.editId) {
     await perfApi.updatePlan(drawer.editId, payload)
-    message.success('Updated')
+    message.success(t('common.updatedMessage'))
   } else {
     const created = await perfApi.createPlan(payload)
     drawer.editId = created.id
-    message.success('Created. You can now add cases.')
+    message.success(t('perf.createdAddCases'))
   }
   loadPlans()
 })
@@ -498,12 +503,13 @@ const addCasesModal = reactive({
   search: '',
   available: [] as any[],
   selectedIds: [] as number[],
-  columns: [
-    { title: 'Name', dataIndex: 'case_name' },
-    { title: 'Method', dataIndex: 'method', width: 80 },
-    { title: 'URL', dataIndex: 'url', ellipsis: true },
-  ],
 })
+
+const addCasesColumns = computed(() => [
+  { title: t('common.name'), dataIndex: 'case_name' },
+  { title: t('common.method'), dataIndex: 'method', width: 80 },
+  { title: 'URL', dataIndex: 'url', ellipsis: true },
+])
 
 async function reloadAvailableCases() {
   const res: any = await testcaseApi.list({
@@ -547,21 +553,21 @@ async function confirmAddCases() {
   })
   addCasesModal.visible = false
   await refreshDrawerCases()
-  message.success('Added')
+  message.success(t('common.addedMessage'))
 }
 
 async function removeCase(planCaseId: number) {
   if (!drawer.editId) return
   await perfApi.removeCases(drawer.editId, [planCaseId])
   await refreshDrawerCases()
-  message.success('Removed')
+  message.success(t('common.removedMessage'))
 }
 
 // ────── Snapshot sync ──────
 async function syncSnapshots() {
   if (!drawer.editId) return
   const res: any = await perfApi.syncSnapshots(drawer.editId)
-  message.success(`Synced. ${res.diffs?.length || 0} cases updated`)
+  message.success(t('perf.syncedUpdated', { count: res.diffs?.length || 0 }))
   await refreshDrawerCases()
 }
 
@@ -570,14 +576,14 @@ async function onUploadAccountPool(file: File) {
   if (!drawer.editId) return false
   const res: any = await perfApi.uploadAccountPool(drawer.editId, file)
   drawer.accountFileKey = res.s3_key
-  message.success('Account pool uploaded')
+  message.success(t('perf.accountUploaded'))
   return false // prevent default upload behavior
 }
 
 async function onUploadCaseData(planCaseId: number, file: File) {
   if (!drawer.editId) return false
   const res: any = await perfApi.uploadCaseData(drawer.editId, planCaseId, file, 'round_robin')
-  message.success(`Data file uploaded: ${res.mode}`)
+  message.success(t('perf.dataUploaded', { mode: res.mode }))
   await refreshDrawerCases()
   return false
 }
@@ -589,7 +595,7 @@ function shortenKey(key: string) {
 // ────── Delete ──────
 const [onDelete] = useLoading(async (id: number) => {
   await perfApi.deletePlan(id)
-  message.success('Deleted')
+  message.success(t('common.deleted'))
   loadPlans()
 })
 
@@ -628,10 +634,10 @@ async function confirmRun() {
     if (runModal.max_vus) overrides.max_vus = runModal.max_vus
     const run = await perfApi.triggerRun(runModal.planId, overrides)
     runModal.visible = false
-    message.success(`Run #${run.id} started`)
+    message.success(t('perf.runStarted', { id: run.id }))
     router.push({ name: 'PerfRunDetail', params: { id: String(run.id) } })
   } catch (e: any) {
-    message.error(e?.response?.data?.error || 'Failed to start run')
+    message.error(e?.response?.data?.error || t('perf.runStartFailed'))
   } finally {
     runModal.loading = false
   }

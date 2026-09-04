@@ -8,38 +8,38 @@
           <CloseCircleFilled v-else-if="execution.status === 'failed'" />
           <ExclamationCircleFilled v-else-if="execution.status === 'error'" />
           <ClockCircleFilled v-else />
-          {{ execution.status }}
+          {{ t(`status.${execution.status}`, execution.status) }}
         </span>
       </template>
     </a-page-header>
 
     <a-descriptions bordered :column="descColumns" size="small" style="margin-bottom: 24px">
-      <a-descriptions-item label="Plan">{{ execution.testplan_name || 'N/A' }}</a-descriptions-item>
-      <a-descriptions-item label="Env">{{ execution.env_name || 'N/A' }}</a-descriptions-item>
-      <a-descriptions-item label="Trigger">{{ execution.trigger_type }}</a-descriptions-item>
-      <a-descriptions-item label="Pass Rate">
+      <a-descriptions-item :label="t('executions.plan')">{{ execution.testplan_name || t('common.notAvailable') }}</a-descriptions-item>
+      <a-descriptions-item :label="t('executions.env')">{{ execution.env_name || t('common.notAvailable') }}</a-descriptions-item>
+      <a-descriptions-item :label="t('common.trigger')">{{ t(`status.${execution.trigger_type}`, execution.trigger_type) }}</a-descriptions-item>
+      <a-descriptions-item :label="t('executions.passRate')">
         <a-progress :percent="execution.pass_rate" :size="'small'" />
       </a-descriptions-item>
-      <a-descriptions-item label="Duration">{{ execution.duration_ms }}ms</a-descriptions-item>
-      <a-descriptions-item label="Cases">
-        <span class="text-success">{{ execution.passed_cases }} passed</span> /
-        <span class="text-error">{{ execution.failed_cases }} failed</span> /
+      <a-descriptions-item :label="t('common.duration')">{{ execution.duration_ms }}ms</a-descriptions-item>
+      <a-descriptions-item :label="t('common.cases')">
+        <span class="text-success">{{ execution.passed_cases }} {{ t('common.passed') }}</span> /
+        <span class="text-error">{{ execution.failed_cases }} {{ t('common.failed') }}</span> /
         <template v-if="execution.skipped_cases">
-          <span class="text-skipped">{{ execution.skipped_cases }} skipped</span> /
+          <span class="text-skipped">{{ execution.skipped_cases }} {{ t('status.skipped') }}</span> /
         </template>
-        {{ execution.total_cases }} total
+        {{ execution.total_cases }} {{ t('common.total') }}
       </a-descriptions-item>
-      <a-descriptions-item label="Created">{{ execution.created_at }}</a-descriptions-item>
+      <a-descriptions-item :label="t('common.created')">{{ execution.created_at }}</a-descriptions-item>
     </a-descriptions>
 
     <div class="pm-filter-bar">
-      <h3 style="margin: 0;">Case Results</h3>
+      <h3 style="margin: 0;">{{ t('executions.caseResults') }}</h3>
       <a-radio-group v-model:value="statusFilter" size="small" @change="onFilterChange">
-        <a-radio-button value="">All</a-radio-button>
-        <a-radio-button value="passed">Passed</a-radio-button>
-        <a-radio-button value="failed">Failed</a-radio-button>
-        <a-radio-button value="error">Error</a-radio-button>
-        <a-radio-button value="skipped">Skipped</a-radio-button>
+        <a-radio-button value="">{{ t('common.all') }}</a-radio-button>
+        <a-radio-button value="passed">{{ t('status.passed') }}</a-radio-button>
+        <a-radio-button value="failed">{{ t('status.failed') }}</a-radio-button>
+        <a-radio-button value="error">{{ t('status.error') }}</a-radio-button>
+        <a-radio-button value="skipped">{{ t('status.skipped') }}</a-radio-button>
       </a-radio-group>
     </div>
 
@@ -61,7 +61,7 @@
             <CloseCircleFilled v-else-if="record.status === 'failed'" />
             <MinusCircleFilled v-else-if="record.status === 'skipped'" />
             <ExclamationCircleFilled v-else />
-            {{ record.status }}
+            {{ t(`status.${record.status}`, record.status) }}
           </span>
         </template>
         <template v-if="column.dataIndex === 'assertion_results'">
@@ -90,12 +90,12 @@
           </div>
 
           <div v-if="record.assertion_results?.length" style="margin-bottom: 12px">
-            <h4>Assertions</h4>
+            <h4>{{ t('executions.assertions') }}</h4>
             <div v-for="(a, i) in record.assertion_results" :key="i" class="pm-assertion-row">
               <CheckCircleFilled v-if="a.passed" style="color: #49cc90" />
               <CloseCircleFilled v-else style="color: #f93e3e" />
               <code>{{ a.field }} {{ a.operator }} {{ JSON.stringify(a.expected) }}</code>
-              <span v-if="!a.passed" style="color: var(--text-3)">| Actual: {{ JSON.stringify(a.actual) }}</span>
+              <span v-if="!a.passed" style="color: var(--text-3)">| {{ t('testcase.actual') }}: {{ JSON.stringify(a.actual) }}</span>
             </div>
           </div>
 
@@ -104,15 +104,15 @@
           </div>
 
           <div v-if="caseDetails[record.id].stream_metrics" class="pm-stream-metrics">
-            <span class="pm-stream-label">Streaming</span>
-            <span class="pm-stream-item">First token <b>{{ caseDetails[record.id].stream_metrics!.first_token_ms }}ms</b></span>
-            <span class="pm-stream-item">Last token <b>{{ caseDetails[record.id].stream_metrics!.last_token_ms }}ms</b></span>
-            <span class="pm-stream-item"><b>{{ caseDetails[record.id].stream_metrics!.token_count }}</b> tokens</span>
+            <span class="pm-stream-label">{{ t('executions.streaming') }}</span>
+            <span class="pm-stream-item">{{ t('executions.firstToken') }} <b>{{ caseDetails[record.id].stream_metrics!.first_token_ms }}ms</b></span>
+            <span class="pm-stream-item">{{ t('executions.lastToken') }} <b>{{ caseDetails[record.id].stream_metrics!.last_token_ms }}ms</b></span>
+            <span class="pm-stream-item">{{ t('executions.tokensCount', { count: caseDetails[record.id].stream_metrics!.token_count }) }}</span>
             <span v-if="caseDetails[record.id].stream_metrics!.tokens_per_sec != null" class="pm-stream-item"><b>{{ caseDetails[record.id].stream_metrics!.tokens_per_sec }}</b> tok/s</span>
           </div>
 
           <div v-if="caseDetails[record.id].request_headers && Object.keys(caseDetails[record.id].request_headers).length" style="margin-bottom: 12px">
-            <h4>Request Headers</h4>
+            <h4>{{ t('executions.requestHeaders') }}</h4>
             <div class="pm-headers-table">
               <div v-for="(val, key) in caseDetails[record.id].request_headers" :key="key" class="pm-header-row">
                 <span class="pm-header-key">{{ key }}</span>
@@ -122,12 +122,12 @@
           </div>
 
           <div v-if="caseDetails[record.id].request_body" style="margin-bottom: 12px">
-            <h4>Request Body</h4>
+            <h4>{{ t('executions.requestBody') }}</h4>
             <pre class="pm-code-block">{{ formatBody(caseDetails[record.id].request_body) }}</pre>
           </div>
 
           <div v-if="caseDetails[record.id].response_headers && Object.keys(caseDetails[record.id].response_headers).length" style="margin-bottom: 12px">
-            <h4>Response Headers</h4>
+            <h4>{{ t('executions.responseHeaders') }}</h4>
             <div class="pm-headers-table">
               <div v-for="(val, key) in caseDetails[record.id].response_headers" :key="key" class="pm-header-row">
                 <span class="pm-header-key">{{ key }}</span>
@@ -136,7 +136,7 @@
             </div>
           </div>
 
-          <h4>Response Body</h4>
+          <h4>{{ t('executions.responseBody') }}</h4>
           <pre class="pm-code-block">{{ formatBody(caseDetails[record.id].response_body) }}</pre>
         </div>
       </template>
@@ -147,6 +147,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import {
   CheckCircleFilled, CloseCircleFilled, ExclamationCircleFilled,
@@ -155,6 +156,7 @@ import {
 import { executionApi, type Execution, type CaseResult } from '../api/executions.ts'
 
 const route = useRoute()
+const { t } = useI18n()
 const execution = ref<Execution | null>(null)
 const caseResults = ref<any[]>([])
 const caseDetails = reactive<Record<number, CaseResult>>({})
@@ -170,19 +172,19 @@ const descColumns = computed(() => isMobile.value ? 1 : 3)
 const columns = computed(() => {
   if (isMobile.value) {
     return [
-      { title: 'Case', dataIndex: 'case_name', ellipsis: true },
-      { title: 'Status', dataIndex: 'status', width: 90 },
+      { title: t('dashboard.case'), dataIndex: 'case_name', ellipsis: true },
+      { title: t('common.status'), dataIndex: 'status', width: 90 },
       { title: 'ms', dataIndex: 'duration_ms', width: 65, customRender: ({ text }: any) => `${text}` },
     ]
   }
   return [
-    { title: 'Case', dataIndex: 'case_name', ellipsis: true },
-    { title: 'Method', dataIndex: 'request_method', width: 80 },
+    { title: t('dashboard.case'), dataIndex: 'case_name', ellipsis: true },
+    { title: t('common.method'), dataIndex: 'request_method', width: 80 },
     { title: 'URL', dataIndex: 'request_url', ellipsis: true, width: 300 },
-    { title: 'Status', dataIndex: 'status', width: 110 },
+    { title: t('common.status'), dataIndex: 'status', width: 110 },
     { title: 'HTTP', dataIndex: 'response_status', width: 70 },
-    { title: 'Assertions', dataIndex: 'assertion_results', width: 100 },
-    { title: 'Duration', dataIndex: 'duration_ms', width: 90, customRender: ({ text }: any) => `${text}ms` },
+    { title: t('executions.assertions'), dataIndex: 'assertion_results', width: 100 },
+    { title: t('common.duration'), dataIndex: 'duration_ms', width: 90, customRender: ({ text }: any) => `${text}ms` },
   ]
 })
 

@@ -1,17 +1,17 @@
 <template>
   <div class="pm-page">
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px">
-      <h2 style="margin: 0; color: var(--text)">Admin</h2>
-      <a-button @click="$router.back()">Back</a-button>
+      <h2 style="margin: 0; color: var(--text)">{{ t('common.admin') }}</h2>
+      <a-button @click="$router.back()">{{ t('common.back') }}</a-button>
     </div>
 
     <a-tabs v-model:activeKey="activeTab">
       <!-- Whitelist Tab -->
-      <a-tab-pane key="whitelist" tab="Email Whitelist">
+      <a-tab-pane key="whitelist" :tab="t('admin.emailWhitelist')">
         <div style="margin-bottom: 16px; display: flex; gap: 8px">
-          <a-input v-model:value="newEmail" placeholder="email@shanda.com" style="width: 260px" @pressEnter="handleAddWhitelist" />
-          <a-input v-model:value="newNote" placeholder="Note (optional)" style="width: 200px" @pressEnter="handleAddWhitelist" />
-          <a-button type="primary" @click="handleAddWhitelist" :loading="adding">Add</a-button>
+          <a-input v-model:value="newEmail" :placeholder="t('auth.emailPlaceholder')" style="width: 260px" @pressEnter="handleAddWhitelist" />
+          <a-input v-model:value="newNote" :placeholder="t('admin.noteOptional')" style="width: 200px" @pressEnter="handleAddWhitelist" />
+          <a-button type="primary" @click="handleAddWhitelist" :loading="adding">{{ t('common.add') }}</a-button>
         </div>
         <a-table :columns="whitelistColumns" :data-source="whitelist" :pagination="false" row-key="id" size="small">
           <template #bodyCell="{ column, record }">
@@ -19,8 +19,8 @@
               <a-switch :checked="record.is_admin" size="small" @change="handleToggleAdmin(record)" />
             </template>
             <template v-if="column.key === 'action'">
-              <a-popconfirm title="Remove this email?" @confirm="handleDeleteWhitelist(record.id)">
-                <a-button danger size="small">Remove</a-button>
+              <a-popconfirm :title="t('admin.removeEmailConfirm')" @confirm="handleDeleteWhitelist(record.id)">
+                <a-button danger size="small">{{ t('common.remove') }}</a-button>
               </a-popconfirm>
             </template>
           </template>
@@ -28,19 +28,19 @@
       </a-tab-pane>
 
       <!-- Permissions Tab -->
-      <a-tab-pane key="permissions" tab="Project Permissions">
+      <a-tab-pane key="permissions" :tab="t('admin.projectPermissions')">
         <div style="margin-bottom: 16px; display: flex; gap: 8px">
-          <a-select v-model:value="permUserId" placeholder="Select user" style="width: 240px" show-search option-filter-prop="label"
+          <a-select v-model:value="permUserId" :placeholder="t('admin.selectUser')" style="width: 240px" show-search option-filter-prop="label"
             :options="users.map((u: any) => ({ value: u.id, label: u.display_name || u.email }))" />
-          <a-select v-model:value="permProjectId" placeholder="Select project" style="width: 200px" show-search option-filter-prop="label"
+          <a-select v-model:value="permProjectId" :placeholder="t('admin.selectProject')" style="width: 200px" show-search option-filter-prop="label"
             :options="projects.map((p: any) => ({ value: p.id, label: p.name }))" />
-          <a-button type="primary" @click="handleAddPermission">Grant</a-button>
+          <a-button type="primary" @click="handleAddPermission">{{ t('admin.grant') }}</a-button>
         </div>
         <a-table :columns="permColumns" :data-source="permissions" :pagination="false" row-key="id" size="small">
           <template #bodyCell="{ column, record }">
             <template v-if="column.key === 'action'">
-              <a-popconfirm title="Revoke this permission?" @confirm="handleDeletePermission(record.id)">
-                <a-button danger size="small">Revoke</a-button>
+              <a-popconfirm :title="t('admin.revokeConfirm')" @confirm="handleDeletePermission(record.id)">
+                <a-button danger size="small">{{ t('admin.revoke') }}</a-button>
               </a-popconfirm>
             </template>
           </template>
@@ -48,12 +48,12 @@
       </a-tab-pane>
 
       <!-- Audit Tab -->
-      <a-tab-pane key="audit" tab="Audit Logs">
+      <a-tab-pane key="audit" :tab="t('admin.auditLogs')">
         <div style="margin-bottom: 16px; display: flex; gap: 8px">
-          <a-input v-model:value="auditSearch" placeholder="Search by email or path" style="width: 260px" allow-clear @pressEnter="fetchAuditLogs" />
-          <a-select v-model:value="auditAction" placeholder="Method" style="width: 120px" allow-clear
+          <a-input v-model:value="auditSearch" :placeholder="t('admin.searchAudit')" style="width: 260px" allow-clear @pressEnter="fetchAuditLogs" />
+          <a-select v-model:value="auditAction" :placeholder="t('common.method')" style="width: 120px" allow-clear
             :options="['POST','PUT','PATCH','DELETE'].map(m => ({ value: m, label: m }))" />
-          <a-button @click="fetchAuditLogs">Search</a-button>
+          <a-button @click="fetchAuditLogs">{{ t('common.search') }}</a-button>
         </div>
         <a-table :columns="auditColumns" :data-source="auditLogs" row-key="id" size="small"
           :pagination="{ current: auditPage, total: auditTotal, pageSize: 20, showSizeChanger: false }"
@@ -73,25 +73,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { message } from 'ant-design-vue'
 import { getUsers, toggleWhitelistAdmin, getWhitelist, addWhitelist, deleteWhitelist, getPermissions, addPermission, deletePermission, getAuditLogs } from '../api/admin.ts'
 import { projectApi } from '../api/projects.ts'
 
 const activeTab = ref('whitelist')
+const { t } = useI18n()
 
 // Whitelist
 const whitelist = ref<any[]>([])
 const newEmail = ref('')
 const newNote = ref('')
 const adding = ref(false)
-const whitelistColumns = [
-  { title: 'Email', dataIndex: 'email', key: 'email' },
-  { title: 'Note', dataIndex: 'note', key: 'note' },
-  { title: 'Admin', key: 'is_admin', width: 80 },
-  { title: 'Added', dataIndex: 'created_at', key: 'created_at', width: 180 },
+const whitelistColumns = computed(() => [
+  { title: t('auth.email'), dataIndex: 'email', key: 'email' },
+  { title: t('admin.note'), dataIndex: 'note', key: 'note' },
+  { title: t('common.admin'), key: 'is_admin', width: 80 },
+  { title: t('admin.added'), dataIndex: 'created_at', key: 'created_at', width: 180 },
   { title: '', key: 'action', width: 100 },
-]
+])
 
 async function fetchWhitelist() {
   const res: any = await getWhitelist()
@@ -128,13 +130,13 @@ const projects = ref<any[]>([])
 const permissions = ref<any[]>([])
 const permUserId = ref<number>()
 const permProjectId = ref<number>()
-const permColumns = [
-  { title: 'User', dataIndex: 'user_email', key: 'user_email' },
-  { title: 'Name', dataIndex: 'user_display_name', key: 'user_display_name' },
-  { title: 'Project', dataIndex: 'project_name', key: 'project_name' },
-  { title: 'Granted', dataIndex: 'created_at', key: 'created_at', width: 180 },
+const permColumns = computed(() => [
+  { title: t('common.user'), dataIndex: 'user_email', key: 'user_email' },
+  { title: t('common.name'), dataIndex: 'user_display_name', key: 'user_display_name' },
+  { title: t('common.project'), dataIndex: 'project_name', key: 'project_name' },
+  { title: t('admin.granted'), dataIndex: 'created_at', key: 'created_at', width: 180 },
   { title: '', key: 'action', width: 100 },
-]
+])
 
 async function fetchPermissions() {
   const res: any = await getPermissions()
@@ -143,7 +145,7 @@ async function fetchPermissions() {
 
 async function handleAddPermission() {
   if (!permUserId.value || !permProjectId.value) {
-    message.warning('Select both user and project')
+    message.warning(t('admin.selectUserProject'))
     return
   }
   try {
@@ -165,15 +167,15 @@ const auditPage = ref(1)
 const auditTotal = ref(0)
 const auditSearch = ref('')
 const auditAction = ref<string>()
-const auditColumns = [
-  { title: 'Time', dataIndex: 'created_at', key: 'created_at', width: 180 },
-  { title: 'User', dataIndex: 'user_email', key: 'user_email', width: 200 },
-  { title: 'Method', key: 'action', width: 90 },
-  { title: 'Path', dataIndex: 'path', key: 'path' },
-  { title: 'Status', dataIndex: 'status_code', key: 'status_code', width: 80 },
-  { title: 'Body', key: 'body' },
-  { title: 'IP', dataIndex: 'ip_address', key: 'ip_address', width: 130 },
-]
+const auditColumns = computed(() => [
+  { title: t('common.time'), dataIndex: 'created_at', key: 'created_at', width: 180 },
+  { title: t('common.user'), dataIndex: 'user_email', key: 'user_email', width: 200 },
+  { title: t('common.method'), key: 'action', width: 90 },
+  { title: t('common.path'), dataIndex: 'path', key: 'path' },
+  { title: t('common.status'), dataIndex: 'status_code', key: 'status_code', width: 80 },
+  { title: t('admin.body'), key: 'body' },
+  { title: t('admin.ip'), dataIndex: 'ip_address', key: 'ip_address', width: 130 },
+])
 
 function methodColor(m: string) {
   const map: Record<string, string> = { POST: 'green', PUT: 'orange', PATCH: 'blue', DELETE: 'red' }

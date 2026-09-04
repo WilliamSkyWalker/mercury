@@ -1,8 +1,8 @@
 <template>
   <div class="pm-page">
     <div style="margin-bottom: 16px; display: flex; justify-content: space-between;">
-      <a-input-search v-model:value="searchText" placeholder="Search schedules" style="width: 300px" @search="loadSchedules" />
-      <a-button type="primary" @click="openModal()">Create Schedule</a-button>
+      <a-input-search v-model:value="searchText" :placeholder="t('schedules.search')" style="width: 300px" @search="loadSchedules" />
+      <a-button type="primary" @click="openModal()">{{ t('schedules.create') }}</a-button>
     </div>
 
     <a-table :data-source="schedules" :columns="columns" :loading="loading" row-key="id">
@@ -15,29 +15,29 @@
         </template>
         <template v-if="column.dataIndex === 'action'">
           <a-space>
-            <a @click="openModal(record)">Edit</a>
-            <a-popconfirm title="Delete?" @confirm="onDelete(record.id)">
-              <a style="color: #ff4d4f">Delete</a>
+            <a @click="openModal(record)">{{ t('common.edit') }}</a>
+            <a-popconfirm :title="t('schedules.deleteConfirm')" @confirm="onDelete(record.id)">
+              <a style="color: #ff4d4f">{{ t('common.delete') }}</a>
             </a-popconfirm>
           </a-space>
         </template>
       </template>
     </a-table>
 
-    <a-modal v-model:open="modal.visible" :title="modal.editId ? 'Edit Schedule' : 'Create Schedule'" :confirm-loading="saveLoading" @ok="onSave" :width="modalWidth">
+    <a-modal v-model:open="modal.visible" :title="modal.editId ? t('schedules.edit') : t('schedules.create')" :confirm-loading="saveLoading" @ok="onSave" :width="modalWidth">
       <a-form layout="vertical">
-        <a-form-item label="Name">
-          <a-input v-model:value="modal.name" placeholder="Schedule name" />
+        <a-form-item :label="t('common.name')">
+          <a-input v-model:value="modal.name" :placeholder="t('schedules.scheduleName')" />
         </a-form-item>
-        <a-form-item label="Test Plan">
-          <a-select v-model:value="modal.testplanId" placeholder="Select plan" style="width: 100%" show-search :filter-option="(input: string, option: any) => option.label?.toLowerCase().includes(input.toLowerCase())" :options="plans.map(p => ({ value: p.id, label: p.name }))" />
+        <a-form-item :label="t('schedules.testPlan')">
+          <a-select v-model:value="modal.testplanId" :placeholder="t('schedules.selectPlan')" style="width: 100%" show-search :filter-option="(input: string, option: any) => option.label?.toLowerCase().includes(input.toLowerCase())" :options="plans.map(p => ({ value: p.id, label: p.name }))" />
         </a-form-item>
-        <a-form-item label="Environment">
-          <a-select v-model:value="modal.envId" placeholder="Select env (optional)" allow-clear style="width: 100%" :options="envs.map((e: any) => ({ value: e.id, label: e.name }))" />
+        <a-form-item :label="t('common.environment')">
+          <a-select v-model:value="modal.envId" :placeholder="t('schedules.selectOptionalEnv')" allow-clear style="width: 100%" :options="envs.map((e: any) => ({ value: e.id, label: e.name }))" />
         </a-form-item>
-        <a-form-item label="Cron Expression">
+        <a-form-item :label="t('schedules.cronExpression')">
           <a-input v-model:value="modal.cronExpression" placeholder="*/15 * * * *" />
-          <div style="color: var(--text-3); font-size: 12px; margin-top: 4px;">Format: minute hour day month weekday. e.g. <code style="color: var(--accent);">0 9 * * *</code> = daily 9AM, <code style="color: var(--accent);">*/15 * * * *</code> = every 15 min. Linux crontab runs the schedules.</div>
+          <div style="color: var(--text-3); font-size: 12px; margin-top: 4px;">{{ t('schedules.cronHelp') }}</div>
         </a-form-item>
       </a-form>
     </a-modal>
@@ -46,6 +46,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { message } from 'ant-design-vue'
 import { scheduleApi, type ScheduledTask } from '../api/schedules.ts'
 import { testplanApi } from '../api/testplans.ts'
@@ -54,6 +55,7 @@ import { useProjectStore } from '../stores/project.ts'
 import { useLoading } from '../composables/useLoading.ts'
 
 const projectStore = useProjectStore()
+const { t } = useI18n()
 
 const envStore = useEnvStore()
 const envs = computed(() => envStore.envs)
@@ -64,15 +66,15 @@ const plans = ref<any[]>([])
 const loading = ref(false)
 const searchText = ref('')
 
-const columns = [
-  { title: 'Name', dataIndex: 'name' },
-  { title: 'Plan', dataIndex: 'testplan_name', width: 150 },
-  { title: 'Env', dataIndex: 'env_name', width: 100 },
-  { title: 'Active', dataIndex: 'is_active', width: 80 },
-  { title: 'Trigger', dataIndex: 'trigger_info', width: 150 },
-  { title: 'Updated', dataIndex: 'updated_at', width: 180 },
-  { title: 'Action', dataIndex: 'action', width: 150 },
-]
+const columns = computed(() => [
+  { title: t('common.name'), dataIndex: 'name' },
+  { title: t('executions.plan'), dataIndex: 'testplan_name', width: 150 },
+  { title: t('executions.env'), dataIndex: 'env_name', width: 100 },
+  { title: t('common.active'), dataIndex: 'is_active', width: 80 },
+  { title: t('common.trigger'), dataIndex: 'trigger_info', width: 150 },
+  { title: t('common.updated'), dataIndex: 'updated_at', width: 180 },
+  { title: t('common.action'), dataIndex: 'action', width: 150 },
+])
 
 const modal = reactive({
   visible: false, editId: null as number | null,
@@ -108,9 +110,9 @@ async function openModal(record?: ScheduledTask) {
 }
 
 const [onSave, saveLoading] = useLoading(async () => {
-  if (!modal.name || !modal.testplanId) { message.warning('Name and plan are required'); return }
+  if (!modal.name || !modal.testplanId) { message.warning(t('schedules.required')); return }
   if (!modal.cronExpression || modal.cronExpression.trim().split(/\s+/).length !== 5) {
-    message.warning('Cron expression must have 5 fields (m h dom mon dow)')
+    message.warning(t('schedules.invalidCron'))
     return
   }
   const data: any = {
@@ -120,10 +122,10 @@ const [onSave, saveLoading] = useLoading(async () => {
   }
   if (modal.editId) {
     await scheduleApi.update(modal.editId, data)
-    message.success('Updated')
+    message.success(t('common.updatedMessage'))
   } else {
     await scheduleApi.create(data)
-    message.success('Created')
+    message.success(t('common.createdMessage'))
   }
   modal.visible = false
   loadSchedules()
@@ -131,13 +133,13 @@ const [onSave, saveLoading] = useLoading(async () => {
 
 const [onToggle, toggleLoading] = useLoading(async (record: ScheduledTask) => {
   await scheduleApi.toggle(record.id)
-  message.success(record.is_active ? 'Deactivated' : 'Activated')
+  message.success(record.is_active ? t('schedules.deactivated') : t('schedules.activated'))
   loadSchedules()
 })
 
 const [onDelete, deleteLoading] = useLoading(async (id: number) => {
   await scheduleApi.delete(id)
-  message.success('Deleted')
+  message.success(t('common.deleted'))
   loadSchedules()
 })
 

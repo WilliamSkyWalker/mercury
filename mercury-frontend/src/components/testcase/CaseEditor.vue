@@ -13,26 +13,26 @@
           <span :class="`pm-method-${m.toLowerCase()}`">{{ m }}</span>
         </a-select-option>
       </a-select>
-      <span v-else class="pm-method-select pm-method-ws-badge" title="WebSocket case (inferred from ws:// / wss:// URL)">WS</span>
+      <span v-else class="pm-method-select pm-method-ws-badge" :title="t('testcase.websocketCase')">WS</span>
       <input
         v-model="form.url"
         class="pm-url-input"
-        placeholder="Enter request URL"
+        :placeholder="t('testcase.enterUrl')"
         @keydown.enter="onRun"
       />
       <button class="pm-send-btn" :disabled="running" @click="onRun">
-        <span v-if="running" class="pm-sending">Sending...</span>
-        <span v-else>Send</span>
+        <span v-if="running" class="pm-sending">{{ t('testcase.sending') }}</span>
+        <span v-else>{{ t('testcase.send') }}</span>
       </button>
-      <button class="pm-save-btn" :disabled="saving" @click="onSave">Save</button>
-      <button class="pm-curl-btn" @click="onCopyAsCurl" title="Copy last run as cURL">cURL</button>
+      <button class="pm-save-btn" :disabled="saving" @click="onSave">{{ t('common.save') }}</button>
+      <button class="pm-curl-btn" @click="onCopyAsCurl" :title="t('testcase.copyCurl')">cURL</button>
     </div>
 
     <!-- Case name -->
     <div class="pm-name-row">
-      <input v-model="form.case_name" class="pm-name-input" placeholder="Request name" />
-      <div class="pm-timeout-group" title="Request timeout in seconds">
-        <span class="pm-timeout-label">Timeout</span>
+      <input v-model="form.case_name" class="pm-name-input" :placeholder="t('testcase.requestName')" />
+      <div class="pm-timeout-group" :title="t('testcase.timeout')">
+        <span class="pm-timeout-label">{{ t('testcase.timeout') }}</span>
         <input
           v-model.number="form.timeout"
           type="number"
@@ -43,10 +43,10 @@
         <span class="pm-timeout-unit">s</span>
       </div>
       <div class="pm-env-group">
-        <a-select v-model:value="selectedEnvId" placeholder="No Environment" allow-clear class="pm-env-select" popupClassName="pm-dropdown">
+        <a-select v-model:value="selectedEnvId" :placeholder="t('testcase.noEnvironment')" allow-clear class="pm-env-select" popupClassName="pm-dropdown">
           <a-select-option v-for="env in envs" :key="env.id" :value="env.id">{{ env.name }}</a-select-option>
         </a-select>
-        <button class="pm-env-manage-btn" title="Manage Environments" @click="envDrawer.visible = true; loadEnvList()">
+        <button class="pm-env-manage-btn" :title="t('testcase.manageEnvironments')" @click="envDrawer.visible = true; loadEnvList()">
           <SettingOutlined />
         </button>
       </div>
@@ -68,10 +68,10 @@
         </div>
         <div class="pm-tab-content">
           <div v-show="activeTab === 'params'">
-            <HeaderEditor v-model="form.params" label="Param" />
+            <HeaderEditor v-model="form.params" :label="t('testcase.param')" />
           </div>
           <div v-show="activeTab === 'headers'">
-            <HeaderEditor v-model="form.headers" label="Header" />
+            <HeaderEditor v-model="form.headers" :label="t('testcase.header')" />
           </div>
           <div v-show="activeTab === 'steps'">
             <WsStepsEditor v-model="form.ws_steps" />
@@ -92,35 +92,35 @@
               placeholder='{"key": "value"}'
               spellcheck="false"
             ></textarea>
-            <HeaderEditor v-if="form.body_type === 'form'" v-model="formBody" label="Field" />
+            <HeaderEditor v-if="form.body_type === 'form'" v-model="formBody" :label="t('testcase.field')" />
             <div v-if="form.body_type === 'multipart'">
-              <HeaderEditor v-model="multipartBody" label="Field" />
+              <HeaderEditor v-model="multipartBody" :label="t('testcase.field')" />
               <div class="pm-multipart-files">
                 <div v-for="(f, i) in multipartFiles" :key="i" class="pm-file-item">
                   <span class="pm-file-name">{{ f.name }}</span>
                   <span class="pm-file-size">{{ (f.size / 1024).toFixed(1) }}KB</span>
-                  <a class="pm-file-remove" @click="removeFile(i)">Delete</a>
+                  <a class="pm-file-remove" @click="removeFile(i)">{{ t('common.delete') }}</a>
                 </div>
                 <div v-if="props.caseId" class="pm-file-upload">
                   <input type="file" ref="fileInput" style="display:none" @change="onFileSelected" />
                   <a-button size="small" @click="($refs.fileInput as HTMLInputElement)?.click()">
-                    <UploadOutlined /> Upload File
+                    <UploadOutlined /> {{ t('common.uploadFile') }}
                   </a-button>
-                  <span class="pm-file-hint">Use <code>@file(filename)</code> in field value to reference</span>
+                  <span class="pm-file-hint">{{ t('testcase.fileReferenceHint') }}</span>
                 </div>
-                <div v-else class="pm-file-hint">Save the testcase first to upload files</div>
+                <div v-else class="pm-file-hint">{{ t('testcase.saveBeforeUpload') }}</div>
               </div>
             </div>
-            <div v-if="form.body_type === 'none'" class="pm-empty-body">This request does not have a body</div>
+            <div v-if="form.body_type === 'none'" class="pm-empty-body">{{ t('testcase.noBody') }}</div>
           </div>
           <div v-show="activeTab === 'assertions'">
             <AssertionEditor v-model="form.assertions" />
           </div>
           <div v-show="activeTab === 'pre-script'">
-            <ScriptEditor v-model="form.pre_request_script" placeholder="# Pre-request script..." />
+            <ScriptEditor v-model="form.pre_request_script" :placeholder="t('testcase.scriptPrePlaceholder')" />
           </div>
           <div v-show="activeTab === 'post-script'">
-            <ScriptEditor v-model="form.post_request_script" placeholder="# Post-response script..." />
+            <ScriptEditor v-model="form.post_request_script" :placeholder="t('testcase.scriptPostPlaceholder')" />
           </div>
         </div>
       </div>
@@ -128,14 +128,14 @@
       <!-- Response section -->
       <div class="pm-response-section" v-if="runResult">
         <div class="pm-response-bar">
-          <span class="pm-response-title">Response</span>
+          <span class="pm-response-title">{{ t('testcase.response') }}</span>
           <div class="pm-response-meta">
             <span :class="['pm-status-badge', runResult.status === 'passed' ? 'success' : 'error']">
-              {{ runResult.response?.status || 'Error' }}
+              {{ runResult.response?.status || t('common.error') }}
             </span>
             <span class="pm-meta-item">{{ runResult.duration_ms }}ms</span>
             <template v-if="runResult.response?.stream_metrics">
-              <span class="pm-meta-item" title="Time to first token">TTFT {{ runResult.response.stream_metrics.first_token_ms }}ms</span>
+              <span class="pm-meta-item" :title="t('testcase.timeToFirstToken')">TTFT {{ runResult.response.stream_metrics.first_token_ms }}ms</span>
               <span class="pm-meta-item">{{ runResult.response.stream_metrics.token_count }} tok</span>
               <span v-if="runResult.response.stream_metrics.tokens_per_sec != null" class="pm-meta-item">{{ runResult.response.stream_metrics.tokens_per_sec }} tok/s</span>
             </template>
@@ -169,7 +169,7 @@
               <span v-else-if="entry.dir === 'handshake'" class="pm-ws-note">HTTP {{ entry.status }}</span>
             </div>
             <div v-if="runResult.response?.stream_metrics?.transcript_truncated" class="pm-ws-truncated">
-              transcript truncated (2000-entry / 2MB cap reached)
+              {{ t('testcase.transcriptTruncated') }}
             </div>
           </div>
           <div v-show="responseTab === 'body'">
@@ -180,9 +180,9 @@
               <CheckCircleFilled v-if="a.passed" style="color: #49cc90" />
               <CloseCircleFilled v-else style="color: #f93e3e" />
               <code>{{ a.field }} {{ a.operator }} {{ JSON.stringify(a.expected) }}</code>
-              <span v-if="!a.passed" class="pm-actual">actual: {{ JSON.stringify(a.actual) }}</span>
+              <span v-if="!a.passed" class="pm-actual">{{ t('testcase.actual') }}: {{ JSON.stringify(a.actual) }}</span>
             </div>
-            <div v-if="!runResult.assertion_results?.length" class="pm-empty-body">No assertions</div>
+            <div v-if="!runResult.assertion_results?.length" class="pm-empty-body">{{ t('testcase.noAssertions') }}</div>
           </div>
           <div v-show="responseTab === 'variables'">
             <pre class="pm-response-body">{{ JSON.stringify(runResult.extracted_variables, null, 2) }}</pre>
@@ -196,7 +196,7 @@
       <div v-else class="pm-response-placeholder">
         <div class="pm-placeholder-content">
           <SendOutlined style="font-size: 40px; color: var(--text-3)" />
-          <p>Click <strong>Send</strong> to get a response</p>
+          <p>{{ t('testcase.sendForResponse') }}</p>
         </div>
       </div>
     </div>
@@ -204,12 +204,12 @@
     <!-- Environment Management Drawer -->
     <a-drawer
       v-model:open="envDrawer.visible"
-      title="Environments"
+      :title="t('testcase.environments')"
       width="600px"
       :bodyStyle="{ padding: '16px' }"
     >
       <template #extra>
-        <a-button type="primary" size="small" @click="openEnvModal()">+ New</a-button>
+        <a-button type="primary" size="small" @click="openEnvModal()">+ {{ t('common.new') }}</a-button>
       </template>
 
       <a-spin :spinning="envDrawer.loading">
@@ -217,20 +217,20 @@
           <div class="pm-env-card-header">
             <span class="pm-env-card-name">{{ env.name }}</span>
             <a-space>
-              <a class="pm-env-card-action" @click="openEnvModal(env)">Edit</a>
-              <a class="pm-env-card-action" @click="onCopyEnv(env)">Copy</a>
-              <a-popconfirm title="Delete this environment?" @confirm="onDeleteEnv(env.id)">
-                <a class="pm-env-card-action danger">Delete</a>
+              <a class="pm-env-card-action" @click="openEnvModal(env)">{{ t('common.edit') }}</a>
+              <a class="pm-env-card-action" @click="onCopyEnv(env)">{{ t('common.copy') }}</a>
+              <a-popconfirm :title="t('testcase.deleteEnvironmentConfirm')" @confirm="onDeleteEnv(env.id)">
+                <a class="pm-env-card-action danger">{{ t('common.delete') }}</a>
               </a-popconfirm>
             </a-space>
           </div>
           <div class="pm-env-card-vars">
             <span v-for="(v, k) in env.variables" :key="k" class="pm-var-tag">{{ k }}: {{ v }}</span>
-            <span v-if="!Object.keys(env.variables || {}).length" class="pm-env-empty">No variables</span>
+            <span v-if="!Object.keys(env.variables || {}).length" class="pm-env-empty">{{ t('testcase.noVariables') }}</span>
           </div>
         </div>
         <div v-if="!envDrawer.list.length && !envDrawer.loading" class="pm-env-empty-state">
-          No environments yet
+          {{ t('testcase.noEnvironments') }}
         </div>
       </a-spin>
     </a-drawer>
@@ -238,20 +238,20 @@
     <!-- Env Edit Modal -->
     <a-modal
       v-model:open="envModal.visible"
-      :title="envModal.editId ? 'Edit Environment' : 'New Environment'"
+      :title="envModal.editId ? t('testcase.editEnvironment') : t('testcase.newEnvironment')"
       :confirm-loading="envModal.saving"
       @ok="onSaveEnv"
       width="500px"
     >
       <a-form layout="vertical">
-        <a-form-item label="Name">
-          <a-input v-model:value="envModal.name" placeholder="Environment name" />
+        <a-form-item :label="t('common.name')">
+          <a-input v-model:value="envModal.name" :placeholder="t('testcase.environmentName')" />
         </a-form-item>
         <a-form-item>
           <template #label>
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <span>Variables</span>
-              <a style="font-size: 12px;" @click="toggleBulkMode">{{ envModal.bulkMode ? 'Key-Value Mode' : 'Bulk Edit' }}</a>
+              <span>{{ t('common.variables') }}</span>
+              <a style="font-size: 12px;" @click="toggleBulkMode">{{ envModal.bulkMode ? t('testcase.keyValueMode') : t('testcase.bulkEdit') }}</a>
             </div>
           </template>
           <template v-if="envModal.bulkMode">
@@ -259,17 +259,17 @@
               v-model="envModal.bulkText"
               class="pm-code-textarea"
               rows="12"
-              placeholder="key=value (one per line)"
+              :placeholder="t('testcase.bulkPlaceholder')"
               spellcheck="false"
             ></textarea>
           </template>
           <template v-else>
             <div v-for="(_, index) in envModal.vars" :key="index" style="display: flex; gap: 8px; margin-bottom: 8px;">
-              <a-input v-model:value="envModal.vars[index].key" placeholder="Key" style="width: 180px" />
-              <a-input v-model:value="envModal.vars[index].value" placeholder="Value" style="flex: 1" />
+              <a-input v-model:value="envModal.vars[index].key" :placeholder="t('common.key')" style="width: 180px" />
+              <a-input v-model:value="envModal.vars[index].value" :placeholder="t('common.value')" style="flex: 1" />
               <a-button danger size="small" @click="envModal.vars.splice(index, 1)">×</a-button>
             </div>
-            <a-button type="dashed" block @click="envModal.vars.push({ key: '', value: '' })">+ Add Variable</a-button>
+            <a-button type="dashed" block @click="envModal.vars.push({ key: '', value: '' })">+ {{ t('testcase.addVariable') }}</a-button>
           </template>
         </a-form-item>
       </a-form>
@@ -279,6 +279,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, watch, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { CheckCircleFilled, CloseCircleFilled, SendOutlined, SettingOutlined, UploadOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import HeaderEditor from './HeaderEditor.vue'
@@ -301,16 +302,17 @@ const emit = defineEmits<{
 
 const envStore = useEnvStore()
 const projectStore = useProjectStore()
+const { t } = useI18n()
 const envs = computed(() => envStore.envs)
 
 const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']
-const bodyTypes = [
-  { value: 'none', label: 'none' },
-  { value: 'json', label: 'raw (JSON)' },
-  { value: 'form', label: 'x-www-form-urlencoded' },
-  { value: 'multipart', label: 'multipart/form-data' },
-  { value: 'raw', label: 'raw (Text)' },
-]
+const bodyTypes = computed(() => [
+  { value: 'none', label: t('common.none') },
+  { value: 'json', label: t('testcase.rawJson') },
+  { value: 'form', label: t('testcase.formUrlEncoded') },
+  { value: 'multipart', label: t('testcase.multipart') },
+  { value: 'raw', label: t('testcase.rawText') },
+])
 
 const activeTab = ref('params')
 const responseTab = ref('body')
@@ -348,17 +350,17 @@ const isWsCase = computed(() => {
 
 const requestTabs = computed(() => {
   const tabs: Array<{ key: string; label: string; count?: number }> = [
-    { key: 'params', label: 'Params', count: (form.params as any[])?.filter((p: any) => p.key).length || 0 },
-    { key: 'headers', label: 'Headers', count: (form.headers as any[])?.filter((h: any) => h.key).length || 0 },
+    { key: 'params', label: t('testcase.params'), count: (form.params as any[])?.filter((p: any) => p.key).length || 0 },
+    { key: 'headers', label: t('testcase.headers'), count: (form.headers as any[])?.filter((h: any) => h.key).length || 0 },
   ]
   if (isWsCase.value) {
-    tabs.push({ key: 'steps', label: 'Steps', count: (form.ws_steps as any[])?.length || 0 })
+    tabs.push({ key: 'steps', label: t('testcase.steps'), count: (form.ws_steps as any[])?.length || 0 })
   } else {
-    tabs.push({ key: 'body', label: 'Body' })
+    tabs.push({ key: 'body', label: t('common.body') })
   }
-  tabs.push({ key: 'assertions', label: 'Tests', count: (form.assertions as any[])?.length || 0 })
-  tabs.push({ key: 'pre-script', label: 'Pre-request' })
-  tabs.push({ key: 'post-script', label: 'Post-response' })
+  tabs.push({ key: 'assertions', label: t('testcase.tests'), count: (form.assertions as any[])?.length || 0 })
+  tabs.push({ key: 'pre-script', label: t('testcase.preRequest') })
+  tabs.push({ key: 'post-script', label: t('testcase.postResponse') })
   return tabs
 })
 
@@ -376,12 +378,12 @@ const wsTranscript = computed<any[] | null>(() => {
 const responseTabs = computed(() => {
   const tabs: Array<{ key: string; label: string; count?: number }> = []
   if (wsTranscript.value) {
-    tabs.push({ key: 'transcript', label: 'Transcript', count: wsTranscript.value.length })
+    tabs.push({ key: 'transcript', label: t('testcase.transcript'), count: wsTranscript.value.length })
   }
-  tabs.push({ key: 'body', label: 'Body' })
-  tabs.push({ key: 'assertions', label: 'Test Results' })
-  tabs.push({ key: 'variables', label: 'Variables' })
-  tabs.push({ key: 'request', label: 'Request' })
+  tabs.push({ key: 'body', label: t('common.body') })
+  tabs.push({ key: 'assertions', label: t('testcase.testResults') })
+  tabs.push({ key: 'variables', label: t('common.variables') })
+  tabs.push({ key: 'request', label: t('common.request') })
   return tabs
 })
 
@@ -457,18 +459,18 @@ function wsArrow(dir: string): string {
 
 function wsDirLabel(entry: any): string {
   const d = entry?.dir
-  if (d === 'send') return 'send'
-  if (d === 'recv') return 'recv'
-  if (d === 'close') return 'close'
-  if (d === 'wait') return 'wait'
-  if (d === 'error') return entry?.kind ? `error (${entry.kind})` : 'error'
-  if (d === 'handshake') return 'handshake'
+  if (d === 'send') return t('testcase.stepSend')
+  if (d === 'recv') return t('testcase.stepReceive')
+  if (d === 'close') return t('testcase.stepClose')
+  if (d === 'wait') return t('testcase.stepWait')
+  if (d === 'error') return entry?.kind ? `${t('common.error')} (${entry.kind})` : t('common.error')
+  if (d === 'handshake') return t('testcase.handshake')
   return String(d || '')
 }
 
 async function onSave() {
-  if (!form.case_name) { message.warning('Please enter a case name'); return }
-  if (!form.url) { message.warning('Please enter a URL'); return }
+  if (!form.case_name) { message.warning(t('testcase.enterCaseName')); return }
+  if (!form.url) { message.warning(t('testcase.enterUrlWarning')); return }
 
   saving.value = true
   try {
@@ -483,10 +485,10 @@ async function onSave() {
     form.folder = props.folderId
     if (props.caseId) {
       await testcaseApi.update(props.caseId, form)
-      message.success('Saved')
+      message.success(t('common.saved'))
     } else {
       await testcaseApi.create({ ...form, project: projectStore.currentProjectId })
-      message.success('Created')
+      message.success(t('common.createdMessage'))
     }
     emit('saved')
   } finally {
@@ -495,13 +497,13 @@ async function onSave() {
 }
 
 async function onRun() {
-  if (!props.caseId) { message.warning('Save the request first'); return }
+  if (!props.caseId) { message.warning(t('testcase.saveRequestFirst')); return }
   running.value = true
   try {
     runResult.value = await testcaseApi.run(props.caseId, selectedEnvId.value)
     responseTab.value = runResult.value.error_message ? 'body' : 'body'
   } catch (e) {
-    message.error('Request failed')
+    message.error(t('common.requestFailed'))
   } finally {
     running.value = false
   }
@@ -524,7 +526,7 @@ function copyToClipboard(text: string) {
 
 function onCopyAsCurl() {
   if (!runResult.value?.request?.url) {
-    message.warning('Run the testcase first to get a cURL command')
+    message.warning(t('testcase.runFirstForCurl'))
     return
   }
   const req = runResult.value.request
@@ -550,7 +552,7 @@ function onCopyAsCurl() {
   if (bodyPart) parts.push(bodyPart)
   const curl = parts.join(' \\\n  ')
   copyToClipboard(curl)
-  message.success('Copied last run cURL to clipboard')
+  message.success(t('testcase.curlCopied'))
 }
 
 // --- Multipart File Management ---
@@ -561,9 +563,9 @@ async function onFileSelected(e: Event) {
   try {
     const res = await testcaseApi.uploadFile(props.caseId, file)
     multipartFiles.value.push(res)
-    message.success(`Uploaded ${file.name}`)
+    message.success(t('testcase.uploadedFile', { name: file.name }))
   } catch {
-    message.error('Upload failed')
+    message.error(t('testcase.uploadFailed'))
   }
   input.value = ''
 }
@@ -574,9 +576,9 @@ async function removeFile(index: number) {
   try {
     await testcaseApi.deleteFile(props.caseId, file.name)
     multipartFiles.value.splice(index, 1)
-    message.success('Deleted')
+    message.success(t('common.deleted'))
   } catch {
-    message.error('Delete failed')
+    message.error(t('testcase.deleteFailed'))
   }
 }
 
@@ -626,24 +628,24 @@ function toggleBulkMode() {
 }
 
 function onCopyEnv(env: Env) {
-  const newName = prompt('New environment name:', `${env.name}_copy`)
+  const newName = prompt(t('testcase.newEnvironmentPrompt'), `${env.name}_copy`)
   if (!newName) return
   if (envDrawer.list.some(e => e.name === newName)) {
-    message.warning('Environment name already exists')
+    message.warning(t('testcase.envNameExists'))
     return
   }
   envApi.create({ name: newName, variables: { ...env.variables }, project: projectStore.currentProjectId } as any).then(() => {
-    message.success('Copied')
+    message.success(t('common.copiedMessage'))
     loadEnvList()
     envStore.fetchEnvs()
-  }).catch(() => message.error('Copy failed'))
+  }).catch(() => message.error(t('testcase.copyFailed')))
 }
 
 async function onSaveEnv() {
-  if (!envModal.name) { message.warning('Name is required'); return }
+  if (!envModal.name) { message.warning(t('testcase.nameRequired')); return }
   // Check duplicate name
   const duplicate = envDrawer.list.find(e => e.name === envModal.name && e.id !== envModal.editId)
-  if (duplicate) { message.warning('Environment name already exists'); return }
+  if (duplicate) { message.warning(t('testcase.envNameExists')); return }
 
   // If in bulk mode, parse text to vars first
   let variables: Record<string, string>
@@ -662,10 +664,10 @@ async function onSaveEnv() {
   try {
     if (envModal.editId) {
       await envApi.update(envModal.editId, { name: envModal.name, variables })
-      message.success('Updated')
+      message.success(t('common.updatedMessage'))
     } else {
       await envApi.create({ name: envModal.name, variables, project: projectStore.currentProjectId } as any)
-      message.success('Created')
+      message.success(t('common.createdMessage'))
     }
     envModal.visible = false
     loadEnvList()
@@ -677,7 +679,7 @@ async function onSaveEnv() {
 
 async function onDeleteEnv(id: number) {
   await envApi.delete(id)
-  message.success('Deleted')
+  message.success(t('common.deleted'))
   loadEnvList()
   envStore.fetchEnvs()
 }

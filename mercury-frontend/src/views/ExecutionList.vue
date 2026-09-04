@@ -1,17 +1,17 @@
 <template>
   <div class="pm-page">
     <div style="margin-bottom: 16px; display: flex; gap: 12px;">
-      <a-input-search v-model:value="filters.search" placeholder="Search by task ID" style="width: 300px" @search="onFilterChange" />
-      <a-select v-model:value="filters.status" placeholder="Status" allow-clear style="width: 120px" @change="onFilterChange">
-        <a-select-option value="passed">Passed</a-select-option>
-        <a-select-option value="failed">Failed</a-select-option>
-        <a-select-option value="running">Running</a-select-option>
-        <a-select-option value="interrupted">Interrupted</a-select-option>
-        <a-select-option value="error">Error</a-select-option>
+      <a-input-search v-model:value="filters.search" :placeholder="t('executions.searchTaskId')" style="width: 300px" @search="onFilterChange" />
+      <a-select v-model:value="filters.status" :placeholder="t('common.status')" allow-clear style="width: 120px" @change="onFilterChange">
+        <a-select-option value="passed">{{ t('status.passed') }}</a-select-option>
+        <a-select-option value="failed">{{ t('status.failed') }}</a-select-option>
+        <a-select-option value="running">{{ t('status.running') }}</a-select-option>
+        <a-select-option value="interrupted">{{ t('status.interrupted') }}</a-select-option>
+        <a-select-option value="error">{{ t('status.error') }}</a-select-option>
       </a-select>
-      <a-select v-model:value="filters.trigger_type" placeholder="Trigger" allow-clear style="width: 120px" @change="onFilterChange">
-        <a-select-option value="manual">Manual</a-select-option>
-        <a-select-option value="scheduled">Scheduled</a-select-option>
+      <a-select v-model:value="filters.trigger_type" :placeholder="t('common.trigger')" allow-clear style="width: 120px" @change="onFilterChange">
+        <a-select-option value="manual">{{ t('status.manual') }}</a-select-option>
+        <a-select-option value="scheduled">{{ t('status.scheduled') }}</a-select-option>
       </a-select>
     </div>
 
@@ -28,7 +28,7 @@
             <ExclamationCircleFilled v-else-if="record.status === 'error'" />
             <MinusCircleFilled v-else-if="record.status === 'interrupted'" />
             <ClockCircleFilled v-else />
-            {{ record.status }}
+            {{ t(`status.${record.status}`, record.status) }}
           </span>
         </template>
         <template v-if="column.dataIndex === 'pass_rate'">
@@ -37,9 +37,12 @@
         <template v-if="column.dataIndex === 'counts'">
           <span style="color: #52c41a">{{ record.passed_cases }}</span> /
           <span style="color: #ff4d4f">{{ record.failed_cases }}</span> /
-          <span v-if="record.skipped_cases" style="color: #faad14">{{ record.skipped_cases }} skipped</span>
+          <span v-if="record.skipped_cases" style="color: #faad14">{{ t('executions.skippedCount', { count: record.skipped_cases }) }}</span>
           <span v-if="record.skipped_cases"> / </span>
           <span>{{ record.total_cases }}</span>
+        </template>
+        <template v-if="column.dataIndex === 'trigger_type'">
+          {{ t(`status.${record.trigger_type}`, record.trigger_type) }}
         </template>
       </template>
     </a-table>
@@ -48,6 +51,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   CheckCircleFilled, CloseCircleFilled, ExclamationCircleFilled,
   ClockCircleFilled, LoadingOutlined, MinusCircleFilled,
@@ -56,31 +60,32 @@ import { executionApi, type Execution } from '../api/executions.ts'
 import { useProjectStore } from '../stores/project.ts'
 
 const projectStore = useProjectStore()
+const { t } = useI18n()
 
 const executions = ref<Execution[]>([])
 const loading = ref(false)
 const filters = reactive({ search: '', status: undefined as string | undefined, trigger_type: undefined as string | undefined })
-const pagination = reactive({ current: 1, pageSize: 20, total: 0, showTotal: (t: number) => `${t} executions`, showSizeChanger: true, pageSizeOptions: ['20', '50', '100'] })
+const pagination = reactive({ current: 1, pageSize: 20, total: 0, showTotal: (total: number) => t('executions.executionsCount', { count: total }), showSizeChanger: true, pageSizeOptions: ['20', '50', '100'] })
 
 const isMobile = window.innerWidth <= 768
 const columns = computed(() => {
   if (isMobile) {
     return [
-      { title: 'Task ID', dataIndex: 'task_id', ellipsis: true },
-      { title: 'Status', dataIndex: 'status', width: 80 },
-      { title: 'P/F/T', dataIndex: 'counts', width: 90 },
+      { title: t('executions.taskId'), dataIndex: 'task_id', ellipsis: true },
+      { title: t('common.status'), dataIndex: 'status', width: 80 },
+      { title: t('executions.counts'), dataIndex: 'counts', width: 90 },
     ]
   }
   return [
-    { title: 'Task ID', dataIndex: 'task_id' },
-    { title: 'Plan', dataIndex: 'testplan_name', width: 150 },
-    { title: 'Env', dataIndex: 'env_name', width: 100 },
-    { title: 'Status', dataIndex: 'status', width: 90 },
-    { title: 'Pass Rate', dataIndex: 'pass_rate', width: 150 },
-    { title: 'P/F/T', dataIndex: 'counts', width: 100 },
-    { title: 'Duration', dataIndex: 'duration_ms', width: 90, customRender: ({ text }: any) => `${text}ms` },
-    { title: 'Trigger', dataIndex: 'trigger_type', width: 90 },
-    { title: 'Time', dataIndex: 'created_at', width: 180 },
+    { title: t('executions.taskId'), dataIndex: 'task_id' },
+    { title: t('executions.plan'), dataIndex: 'testplan_name', width: 150 },
+    { title: t('executions.env'), dataIndex: 'env_name', width: 100 },
+    { title: t('common.status'), dataIndex: 'status', width: 90 },
+    { title: t('executions.passRate'), dataIndex: 'pass_rate', width: 150 },
+    { title: t('executions.counts'), dataIndex: 'counts', width: 100 },
+    { title: t('executions.duration'), dataIndex: 'duration_ms', width: 90, customRender: ({ text }: any) => `${text}ms` },
+    { title: t('common.trigger'), dataIndex: 'trigger_type', width: 90 },
+    { title: t('common.time'), dataIndex: 'created_at', width: 180 },
   ]
 })
 

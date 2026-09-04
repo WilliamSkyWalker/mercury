@@ -1,42 +1,42 @@
 <template>
   <div class="pm-ws-steps">
     <div v-if="!modelValue?.length" class="pm-ws-empty">
-      No steps yet. WebSocket cases need at least one send or recv step.
+      {{ t('testcase.noWsSteps') }}
     </div>
 
     <div v-for="(step, idx) in modelValue || []" :key="idx" class="pm-ws-step">
       <div class="pm-ws-step-head">
         <span class="pm-ws-step-idx">#{{ idx + 1 }}</span>
         <a-select :value="step.kind" @change="(v: any) => onKindChange(idx, v)" size="small" style="width: 110px">
-          <a-select-option value="send">send</a-select-option>
-          <a-select-option value="recv">recv</a-select-option>
-          <a-select-option value="wait">wait</a-select-option>
-          <a-select-option value="close">close</a-select-option>
+          <a-select-option value="send">{{ t('testcase.stepSend') }}</a-select-option>
+          <a-select-option value="recv">{{ t('testcase.stepReceive') }}</a-select-option>
+          <a-select-option value="wait">{{ t('testcase.stepWait') }}</a-select-option>
+          <a-select-option value="close">{{ t('testcase.stepClose') }}</a-select-option>
         </a-select>
         <div class="pm-ws-step-actions">
-          <a-button size="small" :disabled="idx === 0" @click="move(idx, -1)" title="Move up">↑</a-button>
-          <a-button size="small" :disabled="idx === (modelValue?.length || 0) - 1" @click="move(idx, 1)" title="Move down">↓</a-button>
-          <a-button size="small" danger @click="remove(idx)" title="Delete">×</a-button>
+          <a-button size="small" :disabled="idx === 0" @click="move(idx, -1)" :title="t('testcase.moveUp')">↑</a-button>
+          <a-button size="small" :disabled="idx === (modelValue?.length || 0) - 1" @click="move(idx, 1)" :title="t('testcase.moveDown')">↓</a-button>
+          <a-button size="small" danger @click="remove(idx)" :title="t('common.delete')">×</a-button>
         </div>
       </div>
 
       <div v-if="step.kind === 'send'" class="pm-ws-step-body">
         <div class="pm-ws-row">
-          <label class="pm-ws-label">Type</label>
+          <label class="pm-ws-label">{{ t('testcase.type') }}</label>
           <a-select :value="step.payload_type || 'text'" @change="(v: any) => updateStep(idx, { payload_type: v })" size="small" style="width: 140px">
-            <a-select-option value="text">text</a-select-option>
-            <a-select-option value="json">json</a-select-option>
-            <a-select-option value="binary_b64">binary (base64)</a-select-option>
+            <a-select-option value="text">{{ t('testcase.textType') }}</a-select-option>
+            <a-select-option value="json">{{ t('testcase.jsonType') }}</a-select-option>
+            <a-select-option value="binary_b64">{{ t('testcase.binaryBase64Type') }}</a-select-option>
           </a-select>
         </div>
         <div class="pm-ws-row">
-          <label class="pm-ws-label">Payload</label>
+          <label class="pm-ws-label">{{ t('testcase.payload') }}</label>
           <textarea
             :value="payloadText(step)"
             @input="onPayloadInput(idx, ($event.target as HTMLTextAreaElement).value)"
             class="pm-code-textarea"
             rows="4"
-            :placeholder="step.payload_type === 'json' ? '{&quot;type&quot;:&quot;subscribe&quot;}' : 'message text'"
+            :placeholder="step.payload_type === 'json' ? '{&quot;type&quot;:&quot;subscribe&quot;}' : t('testcase.messageText')"
             spellcheck="false"
           ></textarea>
         </div>
@@ -44,7 +44,7 @@
 
       <div v-else-if="step.kind === 'recv'" class="pm-ws-step-body">
         <div class="pm-ws-row">
-          <label class="pm-ws-label">Timeout (ms)</label>
+          <label class="pm-ws-label">{{ t('testcase.timeoutMs') }}</label>
           <a-input-number
             :value="step.timeout_ms ?? 60000"
             @change="(v: any) => updateStep(idx, { timeout_ms: v })"
@@ -54,13 +54,13 @@
             size="small"
             style="width: 160px"
           />
-          <span class="pm-ws-hint">Default 60000 (60s). Recv fails the case if no message arrives.</span>
+          <span class="pm-ws-hint">{{ t('testcase.recvTimeoutHint') }}</span>
         </div>
       </div>
 
       <div v-else-if="step.kind === 'wait'" class="pm-ws-step-body">
         <div class="pm-ws-row">
-          <label class="pm-ws-label">Duration (ms)</label>
+          <label class="pm-ws-label">{{ t('testcase.durationMs') }}</label>
           <a-input-number
             :value="step.duration_ms ?? 1000"
             @change="(v: any) => updateStep(idx, { duration_ms: v })"
@@ -75,7 +75,7 @@
 
       <div v-else-if="step.kind === 'close'" class="pm-ws-step-body">
         <div class="pm-ws-row">
-          <label class="pm-ws-label">Code</label>
+          <label class="pm-ws-label">{{ t('testcase.code') }}</label>
           <a-input-number
             :value="step.code ?? 1000"
             @change="(v: any) => updateStep(idx, { code: v })"
@@ -84,7 +84,7 @@
             size="small"
             style="width: 120px"
           />
-          <label class="pm-ws-label">Reason</label>
+          <label class="pm-ws-label">{{ t('testcase.reason') }}</label>
           <a-input
             :value="step.reason ?? ''"
             @change="(e: any) => updateStep(idx, { reason: e.target.value })"
@@ -96,19 +96,21 @@
     </div>
 
     <div class="pm-ws-add">
-      <a-button size="small" @click="add('send')">+ send</a-button>
-      <a-button size="small" @click="add('recv')">+ recv</a-button>
-      <a-button size="small" @click="add('wait')">+ wait</a-button>
-      <a-button size="small" @click="add('close')">+ close</a-button>
+      <a-button size="small" @click="add('send')">+ {{ t('testcase.stepSend') }}</a-button>
+      <a-button size="small" @click="add('recv')">+ {{ t('testcase.stepReceive') }}</a-button>
+      <a-button size="small" @click="add('wait')">+ {{ t('testcase.stepWait') }}</a-button>
+      <a-button size="small" @click="add('close')">+ {{ t('testcase.stepClose') }}</a-button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { WsStep, WsStepKind } from '../../api/testcases.ts'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<{ modelValue: WsStep[] | null }>()
 const emit = defineEmits<{ 'update:modelValue': [value: WsStep[]] }>()
+const { t } = useI18n()
 
 function steps(): WsStep[] {
   return props.modelValue ? [...props.modelValue] : []

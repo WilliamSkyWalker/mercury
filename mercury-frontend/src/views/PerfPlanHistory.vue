@@ -1,8 +1,8 @@
 <template>
   <div class="pm-page">
-    <a-page-header @back="$router.back()" :title="`Run history: ${planName || 'Plan #' + planId}`">
+    <a-page-header @back="$router.back()" :title="t('perf.runHistory', { name: planName || t('perf.planNumber', { id: planId }) })">
       <template #extra>
-        <a-button @click="refresh">Refresh</a-button>
+        <a-button @click="refresh">{{ t('common.refresh') }}</a-button>
       </template>
     </a-page-header>
 
@@ -19,7 +19,7 @@
           <a @click="goTo(record.id)">#{{ record.id }}</a>
         </template>
         <template v-if="column.dataIndex === 'status'">
-          <a-tag :color="statusColor(record.status)">{{ record.status }}</a-tag>
+          <a-tag :color="statusColor(record.status)">{{ t(`status.${record.status}`, record.status) }}</a-tag>
         </template>
         <template v-if="column.dataIndex === 'started_at'">
           {{ record.started_at ? dayjs(record.started_at).format('YYYY-MM-DD HH:mm:ss') : '—' }}
@@ -28,7 +28,7 @@
           {{ ((record.error_rate || 0) * 100).toFixed(2) }}%
         </template>
         <template v-if="column.dataIndex === 'action'">
-          <a-button size="small" @click="goTo(record.id)">Detail</a-button>
+          <a-button size="small" @click="goTo(record.id)">{{ t('common.detail') }}</a-button>
         </template>
       </template>
     </a-table>
@@ -37,12 +37,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import { perfApi, type PerfRun } from '../api/perf.ts'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const planId = computed(() => Number(route.params.id))
 
 const runs = ref<PerfRun[]>([])
@@ -55,17 +57,17 @@ function onTableChange(p: any) {
   historyPagination.pageSize = p.pageSize
 }
 
-const columns = [
-  { title: 'Run', dataIndex: 'id', width: 80 },
-  { title: 'Status', dataIndex: 'status', width: 110 },
-  { title: 'Target RPS', dataIndex: 'target_rate', width: 100 },
-  { title: 'Duration', dataIndex: 'duration_secs', width: 90, customRender: ({ text }: any) => `${text}s` },
-  { title: 'Total Reqs', dataIndex: 'total_reqs', width: 100 },
-  { title: 'p95 ms', dataIndex: 'p95_ms', width: 100 },
-  { title: 'Error Rate', dataIndex: 'error_rate', width: 110 },
-  { title: 'Started', dataIndex: 'started_at', width: 180 },
-  { title: 'Action', dataIndex: 'action', width: 100 },
-]
+const columns = computed(() => [
+  { title: t('perf.runNumber'), dataIndex: 'id', width: 80 },
+  { title: t('common.status'), dataIndex: 'status', width: 110 },
+  { title: t('perf.targetRps'), dataIndex: 'target_rate', width: 100 },
+  { title: t('common.duration'), dataIndex: 'duration_secs', width: 90, customRender: ({ text }: any) => `${text}s` },
+  { title: t('perf.totalReqs'), dataIndex: 'total_reqs', width: 100 },
+  { title: t('perf.p95Ms'), dataIndex: 'p95_ms', width: 100 },
+  { title: t('perf.errorRate'), dataIndex: 'error_rate', width: 110 },
+  { title: t('common.started'), dataIndex: 'started_at', width: 180 },
+  { title: t('common.action'), dataIndex: 'action', width: 100 },
+])
 
 function statusColor(s: string) {
   if (s === 'completed') return 'green'

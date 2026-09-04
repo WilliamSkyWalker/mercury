@@ -3,7 +3,7 @@
     <!-- Left sidebar: unified collection tree -->
     <div class="pm-sidebar">
       <div class="pm-sidebar-header">
-        <span class="pm-sidebar-title">Collections</span>
+        <span class="pm-sidebar-title">{{ t('testcase.collections') }}</span>
         <a-button type="text" size="small" class="pm-icon-btn" @click="onNewFolder">
           <FolderAddOutlined />
         </a-button>
@@ -26,10 +26,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { FolderAddOutlined } from '@ant-design/icons-vue'
 import FolderTree from '../components/testcase/FolderTree.vue'
 import CaseEditor from '../components/testcase/CaseEditor.vue'
 
+const { t } = useI18n()
 const folderTreeRef = ref()
 const selectedFolderId = ref<number | null>(null)
 const selectedCaseId = ref<number | null>(null)

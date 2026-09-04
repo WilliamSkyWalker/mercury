@@ -3,25 +3,26 @@ import type { RouteRecordRaw } from 'vue-router'
 import { notification, Button } from 'ant-design-vue'
 import { h } from 'vue'
 import AppLayout from '../components/layout/AppLayout.vue'
+import { i18n } from '../locales'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'Login',
     component: () => import('../views/Login.vue'),
-    meta: { public: true },
+    meta: { public: true, titleKey: 'auth.login' },
   },
   {
     path: '/admin',
     name: 'Admin',
     component: () => import('../views/AdminManagement.vue'),
-    meta: { skipProjectCheck: true },
+    meta: { skipProjectCheck: true, titleKey: 'common.admin' },
   },
   {
     path: '/projects',
     name: 'ProjectSelect',
     component: () => import('../views/ProjectSelect.vue'),
-    meta: { skipProjectCheck: true },
+    meta: { skipProjectCheck: true, titleKey: 'nav.manageProjects' },
   },
   {
     path: '/',
@@ -32,55 +33,55 @@ const routes: RouteRecordRaw[] = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('../views/Dashboard.vue'),
-        meta: { title: 'Dashboard', icon: 'dashboard' },
+        meta: { titleKey: 'nav.dashboard', icon: 'dashboard' },
       },
       {
         path: 'testcases',
         name: 'TestcaseManagement',
         component: () => import('../views/TestcaseManagement.vue'),
-        meta: { title: 'Test Cases', icon: 'experiment' },
+        meta: { titleKey: 'dashboard.testCases', icon: 'experiment' },
       },
       {
         path: 'testplans',
         name: 'TestplanManagement',
         component: () => import('../views/TestplanManagement.vue'),
-        meta: { title: 'Test Plans', icon: 'ordered-list' },
+        meta: { titleKey: 'dashboard.testPlans', icon: 'ordered-list' },
       },
       {
         path: 'executions',
         name: 'ExecutionList',
         component: () => import('../views/ExecutionList.vue'),
-        meta: { title: 'Executions', icon: 'history' },
+        meta: { titleKey: 'nav.tasks', icon: 'history' },
       },
       {
         path: 'executions/:id',
         name: 'ExecutionDetail',
         component: () => import('../views/ExecutionDetail.vue'),
-        meta: { title: 'Execution Detail', hidden: true, public: true, skipProjectCheck: true },
+        meta: { titleKey: 'common.detail', hidden: true, public: true, skipProjectCheck: true },
       },
       {
         path: 'schedules',
         name: 'ScheduleManagement',
         component: () => import('../views/ScheduleManagement.vue'),
-        meta: { title: 'Schedules', icon: 'clock-circle' },
+        meta: { titleKey: 'nav.schedules', icon: 'clock-circle' },
       },
       {
         path: 'perf',
         name: 'PerfPlanManagement',
         component: () => import('../views/PerfPlanManagement.vue'),
-        meta: { title: 'Load Test', icon: 'thunderbolt' },
+        meta: { titleKey: 'nav.loadTest', icon: 'thunderbolt' },
       },
       {
         path: 'perf/plans/:id/runs',
         name: 'PerfPlanHistory',
         component: () => import('../views/PerfPlanHistory.vue'),
-        meta: { title: 'Run History' },
+        meta: { titleKey: 'common.history' },
       },
       {
         path: 'perf/runs/:id',
         name: 'PerfRunDetail',
         component: () => import('../views/PerfRunDetail.vue'),
-        meta: { title: 'Run Detail' },
+        meta: { titleKey: 'common.detail' },
       },
     ],
   },
@@ -119,8 +120,8 @@ async function checkForUpdate() {
     if (newHash && newHash !== currentScriptHash) {
       currentScriptHash = newHash
       notification.info({
-        message: 'New Version Available',
-        description: 'A new version has been deployed. Click to reload.',
+        message: i18n.global.t('update.title'),
+        description: i18n.global.t('update.description'),
         btn: () => h(Button, {
           type: 'primary',
           size: 'small',
@@ -128,7 +129,7 @@ async function checkForUpdate() {
             notification.destroy()
             window.location.reload()
           },
-        }, () => 'Reload Now'),
+        }, () => i18n.global.t('update.reload')),
         duration: 0,
         placement: 'topRight',
       })
@@ -158,6 +159,11 @@ router.beforeEach((to) => {
   checkForUpdate()
 
   return true
+})
+
+router.afterEach((to) => {
+  const titleKey = to.meta.titleKey as string | undefined
+  document.title = titleKey ? `Mercury · ${i18n.global.t(titleKey)}` : 'Mercury'
 })
 
 export default router

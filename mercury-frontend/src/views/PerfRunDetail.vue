@@ -1,34 +1,34 @@
 <template>
   <div class="pm-page" v-if="run">
-    <a-page-header @back="$router.back()" :title="`Run #${run.id}: ${run.plan_name || ''}`">
+    <a-page-header @back="$router.back()" :title="t('perf.runTitle', { id: run.id, name: run.plan_name || '' })">
       <template #extra>
-        <a-tag :color="statusColor">{{ run.status }}</a-tag>
+        <a-tag :color="statusColor">{{ t(`status.${run.status}`, run.status) }}</a-tag>
         <a-button
           v-if="canAbort"
           danger
           @click="onAbort"
           :loading="aborting"
         >
-          Abort
+          {{ t('perf.abort') }}
         </a-button>
-        <a-button @click="refresh">Refresh</a-button>
+        <a-button @click="refresh">{{ t('common.refresh') }}</a-button>
       </template>
 
       <div class="run-meta">
-        <div class="run-meta-cell"><label>Target RPS</label><span>{{ run.target_rate }}</span></div>
-        <div class="run-meta-cell"><label>Duration</label><span>{{ run.duration_secs }}s</span></div>
-        <div class="run-meta-cell"><label>Max VUs</label><span>{{ run.max_vus }}</span></div>
-        <div class="run-meta-cell"><label>Started</label><span>{{ fmt(run.started_at) }}</span></div>
-        <div class="run-meta-cell"><label>Finished</label><span>{{ fmt(run.finished_at) }}</span></div>
-        <div class="run-meta-cell"><label>Last Heartbeat</label><span>{{ fmt(run.last_heartbeat_at) }}</span></div>
-        <div class="run-meta-cell"><label>Elapsed</label><span>{{ elapsedStr }}</span></div>
+        <div class="run-meta-cell"><label>{{ t('perf.targetRps') }}</label><span>{{ run.target_rate }}</span></div>
+        <div class="run-meta-cell"><label>{{ t('common.duration') }}</label><span>{{ run.duration_secs }}s</span></div>
+        <div class="run-meta-cell"><label>{{ t('perf.maxVus') }}</label><span>{{ run.max_vus }}</span></div>
+        <div class="run-meta-cell"><label>{{ t('common.started') }}</label><span>{{ fmt(run.started_at) }}</span></div>
+        <div class="run-meta-cell"><label>{{ t('common.finished') }}</label><span>{{ fmt(run.finished_at) }}</span></div>
+        <div class="run-meta-cell"><label>{{ t('perf.lastHeartbeat') }}</label><span>{{ fmt(run.last_heartbeat_at) }}</span></div>
+        <div class="run-meta-cell"><label>{{ t('perf.elapsed') }}</label><span>{{ elapsedStr }}</span></div>
       </div>
     </a-page-header>
 
     <a-alert
       v-if="run.error_message"
       type="error"
-      :message="`Error: ${run.error_message}`"
+      :message="`${t('common.error')}: ${run.error_message}`"
       style="margin-bottom: 16px;"
     />
 
@@ -36,23 +36,23 @@
     <a-row :gutter="16" style="margin-bottom: 16px;">
       <a-col :span="4">
         <a-card size="small">
-          <a-statistic title="Current RPS" :value="summary.current_rps || 0" :precision="1" />
+          <a-statistic :title="t('perf.currentRps')" :value="summary.current_rps || 0" :precision="1" />
         </a-card>
       </a-col>
       <a-col :span="4">
         <a-card size="small">
-          <a-statistic title="Active VUs" :value="summary.active_vus || 0" />
+          <a-statistic :title="t('perf.activeVus')" :value="summary.active_vus || 0" />
         </a-card>
       </a-col>
       <a-col :span="4">
         <a-card size="small">
-          <a-statistic title="Total Reqs" :value="summary.total_reqs || 0" />
+          <a-statistic :title="t('perf.totalReqs')" :value="summary.total_reqs || 0" />
         </a-card>
       </a-col>
       <a-col :span="4">
         <a-card size="small">
           <a-statistic
-            title="Success"
+            :title="t('perf.success')"
             :value="summary.success_count || 0"
             :value-style="{ color: '#52c41a' }"
           />
@@ -61,7 +61,7 @@
       <a-col :span="4">
         <a-card size="small">
           <a-statistic
-            title="Errors"
+            :title="t('common.errors')"
             :value="summary.error_count || 0"
             :value-style="(summary.error_count || 0) > 0 ? { color: '#ff4d4f' } : undefined"
           />
@@ -70,7 +70,7 @@
       <a-col :span="4">
         <a-card size="small">
           <a-statistic
-            title="Dropped"
+            :title="t('perf.dropped')"
             :value="summary.dropped_count || 0"
             :value-style="(summary.dropped_count || 0) > 0 ? { color: '#faad14' } : undefined"
           />
@@ -79,7 +79,7 @@
     </a-row>
 
     <!-- ── Latency ────────────────────────────────── -->
-    <a-card title="Latency (ms)" size="small" style="margin-bottom: 16px;">
+    <a-card :title="t('perf.latency')" size="small" style="margin-bottom: 16px;">
       <a-row :gutter="16">
         <a-col :span="4">
           <a-statistic title="p50" :value="latency.p50 || 0" :precision="1" />
@@ -91,31 +91,31 @@
           <a-statistic title="p99" :value="latency.p99 || 0" :precision="1" />
         </a-col>
         <a-col :span="4">
-          <a-statistic title="avg" :value="latency.avg || 0" :precision="1" />
+          <a-statistic :title="t('perf.average')" :value="latency.avg || 0" :precision="1" />
         </a-col>
         <a-col :span="4">
-          <a-statistic title="min" :value="latency.min || 0" :precision="1" />
+          <a-statistic :title="t('perf.minimum')" :value="latency.min || 0" :precision="1" />
         </a-col>
         <a-col :span="4">
-          <a-statistic title="max" :value="latency.max || 0" :precision="1" />
+          <a-statistic :title="t('perf.maximum')" :value="latency.max || 0" :precision="1" />
         </a-col>
       </a-row>
     </a-card>
 
     <!-- ── Live RPS chart ─────────────────────────── -->
-    <a-card title="RPS over time" size="small" style="margin-bottom: 16px;">
+    <a-card :title="t('perf.rpsOverTime')" size="small" style="margin-bottom: 16px;">
       <div ref="chartContainer" style="width: 100%; height: 280px;"></div>
       <div style="font-size: 12px; color: var(--text-3); margin-top: 4px;">
-        Sampled every {{ POLL_MS / 1000 }}s, in-memory. Browser must stay open to capture the curve.
+        {{ t('perf.chartHint', { seconds: POLL_MS / 1000 }) }}
       </div>
     </a-card>
 
     <!-- ── Per-Endpoint (case) ────────────────────── -->
-    <a-card title="Per-Endpoint" size="small" style="margin-bottom: 16px;">
+    <a-card :title="t('perf.perEndpoint')" size="small" style="margin-bottom: 16px;">
       <template #extra>
         <a-input-search
           v-model:value="caseFilter"
-          placeholder="Filter by case name"
+          :placeholder="t('perf.filterCaseName')"
           style="width: 220px"
           size="small"
           allow-clear
@@ -132,7 +132,7 @@
     </a-card>
 
     <!-- ── Per-Transaction (kept for plans with multiple chains) ─── -->
-    <a-card title="Per-Transaction" size="small" v-if="txRows.length > 1 || (txRows[0] && txRows[0].name !== '__setup__' && txRows[0].name !== 'regression')">
+    <a-card :title="t('perf.perTransaction')" size="small" v-if="txRows.length > 1 || (txRows[0] && txRows[0].name !== '__setup__' && txRows[0].name !== 'regression')">
       <a-table
         :data-source="txRows"
         :columns="txColumns"
@@ -147,6 +147,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import * as echarts from 'echarts'
@@ -156,6 +157,7 @@ import { perfApi, type PerfRun } from '../api/perf.ts'
 const POLL_MS = 2000
 
 const route = useRoute()
+const { t, locale } = useI18n()
 const runId = computed(() => Number(route.params.id))
 
 const run = ref<PerfRun | null>(null)
@@ -236,35 +238,35 @@ const caseRowsFiltered = computed(() => {
   return caseRows.value.filter((r) => r.name.toLowerCase().includes(f))
 })
 
-const caseColumns = [
+const caseColumns = computed(() => [
   {
-    title: 'Endpoint (case)', dataIndex: 'name',
-    customRender: ({ text }: any) => text || '(unnamed)',
+    title: t('perf.endpointCase'), dataIndex: 'name',
+    customRender: ({ text }: any) => text || t('common.unnamed'),
   },
-  { title: 'Transaction', dataIndex: 'transaction', width: 140 },
-  { title: 'Count', dataIndex: 'count', width: 90, sorter: (a: any, b: any) => a.count - b.count },
+  { title: t('perf.transaction'), dataIndex: 'transaction', width: 140 },
+  { title: t('common.count'), dataIndex: 'count', width: 90, sorter: (a: any, b: any) => a.count - b.count },
   { title: 'p50 ms', dataIndex: 'p50', width: 90, sorter: (a: any, b: any) => a.p50 - b.p50 },
   { title: 'p95 ms', dataIndex: 'p95', width: 90, sorter: (a: any, b: any) => a.p95 - b.p95, defaultSortOrder: 'descend' },
   { title: 'p99 ms', dataIndex: 'p99', width: 90, sorter: (a: any, b: any) => a.p99 - b.p99 },
   { title: 'avg ms', dataIndex: 'avg', width: 90, sorter: (a: any, b: any) => a.avg - b.avg },
   {
-    title: 'Error Rate', dataIndex: 'error_rate', width: 110,
+    title: t('perf.errorRate'), dataIndex: 'error_rate', width: 110,
     sorter: (a: any, b: any) => a.error_rate - b.error_rate,
     customRender: ({ text }: any) => (text * 100).toFixed(2) + '%',
   },
-]
+])
 
-const txColumns = [
-  { title: 'Transaction', dataIndex: 'name' },
-  { title: 'Count', dataIndex: 'count', width: 100 },
+const txColumns = computed(() => [
+  { title: t('perf.transaction'), dataIndex: 'name' },
+  { title: t('common.count'), dataIndex: 'count', width: 100 },
   { title: 'p95 (ms)', dataIndex: 'p95_ms', width: 120 },
   {
-    title: 'Error Rate',
+    title: t('perf.errorRate'),
     dataIndex: 'error_rate',
     width: 120,
     customRender: ({ text }: any) => (text * 100).toFixed(2) + '%',
   },
-]
+])
 
 // ── chart state (client-side time series) ────────────────────────────
 const chartSamples = ref<{ t: number; rps: number; p95: number }[]>([])
@@ -274,7 +276,7 @@ function ensureChart() {
   chartInst = echarts.init(chartContainer.value)
   chartInst.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['RPS', 'p95 ms'], textStyle: { color: '#ccc' } },
+    legend: { data: ['RPS', t('perf.p95Ms')], textStyle: { color: '#ccc' } },
     grid: { left: 50, right: 60, top: 30, bottom: 30 },
     xAxis: {
       type: 'time',
@@ -282,11 +284,11 @@ function ensureChart() {
     },
     yAxis: [
       { type: 'value', name: 'RPS', position: 'left', axisLabel: { color: '#999' } },
-      { type: 'value', name: 'p95 ms', position: 'right', axisLabel: { color: '#999' } },
+      { type: 'value', name: t('perf.p95Ms'), position: 'right', axisLabel: { color: '#999' } },
     ],
     series: [
       { name: 'RPS', type: 'line', smooth: true, yAxisIndex: 0, data: [], itemStyle: { color: '#1890ff' } },
-      { name: 'p95 ms', type: 'line', smooth: true, yAxisIndex: 1, data: [], itemStyle: { color: '#faad14' } },
+      { name: t('perf.p95Ms'), type: 'line', smooth: true, yAxisIndex: 1, data: [], itemStyle: { color: '#faad14' } },
     ],
   })
 }
@@ -340,10 +342,10 @@ async function onAbort() {
   aborting.value = true
   try {
     await perfApi.abortRun(run.value.id)
-    message.success('Abort signaled — finishing in-flight requests…')
+    message.success(t('perf.abortSignaled'))
     refresh()
   } catch (e: any) {
-    message.error(e?.response?.data?.error || 'Failed to abort')
+    message.error(e?.response?.data?.error || t('perf.abortFailed'))
   } finally {
     aborting.value = false
   }
@@ -357,6 +359,14 @@ watch(
     }
   }
 )
+
+watch(locale, () => {
+  if (!chartInst) return
+  chartInst.dispose()
+  chartInst = null
+  ensureChart()
+  pushSample()
+})
 
 onMounted(async () => {
   await refresh()

@@ -2,7 +2,7 @@
   <div class="project-select-page">
     <div class="project-select-container">
       <h1 class="title">Mercury</h1>
-      <p class="subtitle">Select a project to continue</p>
+      <p class="subtitle">{{ t('projects.selectPrompt') }}</p>
 
       <a-spin :spinning="projectStore.loading">
         <div class="project-grid">
@@ -13,28 +13,28 @@
             @click="onSelect(p)"
           >
             <div class="project-card-name">{{ p.name }}</div>
-            <div class="project-card-desc">{{ p.description || 'No description' }}</div>
+            <div class="project-card-desc">{{ p.description || t('common.noDescription') }}</div>
             <div class="project-card-stats">
-              <span><ExperimentOutlined /> {{ p.testcase_count || 0 }} cases</span>
-              <span><CloudServerOutlined /> {{ p.env_count || 0 }} envs</span>
-              <span><OrderedListOutlined /> {{ p.testplan_count || 0 }} plans</span>
+              <span><ExperimentOutlined /> {{ t('projects.casesCount', { count: p.testcase_count || 0 }) }}</span>
+              <span><CloudServerOutlined /> {{ t('projects.envsCount', { count: p.env_count || 0 }) }}</span>
+              <span><OrderedListOutlined /> {{ t('projects.plansCount', { count: p.testplan_count || 0 }) }}</span>
             </div>
           </div>
 
           <div class="project-card project-card-new" @click="showCreateModal = true">
             <PlusOutlined style="font-size: 32px; color: var(--text-3)" />
-            <div style="color: var(--text-3); margin-top: 8px">New Project</div>
+            <div style="color: var(--text-3); margin-top: 8px">{{ t('projects.newProject') }}</div>
           </div>
         </div>
       </a-spin>
 
-      <a-modal v-model:open="showCreateModal" title="Create Project" :confirm-loading="createLoading" @ok="onCreate">
+      <a-modal v-model:open="showCreateModal" :title="t('projects.createProject')" :confirm-loading="createLoading" @ok="onCreate">
         <a-form layout="vertical">
-          <a-form-item label="Name">
-            <a-input v-model:value="newProject.name" placeholder="Project name" />
+          <a-form-item :label="t('common.name')">
+            <a-input v-model:value="newProject.name" :placeholder="t('projects.projectName')" />
           </a-form-item>
-          <a-form-item label="Description">
-            <a-textarea v-model:value="newProject.description" placeholder="Optional description" :rows="3" />
+          <a-form-item :label="t('common.description')">
+            <a-textarea v-model:value="newProject.description" :placeholder="t('projects.optionalDescription')" :rows="3" />
           </a-form-item>
         </a-form>
       </a-modal>
@@ -44,6 +44,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { message } from 'ant-design-vue'
 import {
@@ -58,6 +59,7 @@ import { useLoading } from '../composables/useLoading.ts'
 
 const router = useRouter()
 const projectStore = useProjectStore()
+const { t } = useI18n()
 
 const showCreateModal = ref(false)
 const newProject = reactive({ name: '', description: '' })
@@ -68,9 +70,9 @@ function onSelect(p: Project) {
 }
 
 const [onCreate, createLoading] = useLoading(async () => {
-  if (!newProject.name) { message.warning('Name is required'); return }
+  if (!newProject.name) { message.warning(t('common.requiredName')); return }
   const created = await projectApi.create(newProject)
-  message.success('Project created')
+  message.success(t('projects.created'))
   showCreateModal.value = false
   newProject.name = ''
   newProject.description = ''

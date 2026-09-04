@@ -13,19 +13,20 @@
       <a-select v-model:value="item.operator" style="width: 130px" size="small" @change="emitChange">
         <a-select-option v-for="op in operators" :key="op.value" :value="op.value">{{ op.label }}</a-select-option>
       </a-select>
-      <a-input v-model:value="item.expectedStr" placeholder="Expected" style="flex: 1" size="small" @change="onExpectedChange(index)" />
+      <a-input v-model:value="item.expectedStr" :placeholder="t('testcase.expected')" style="flex: 1" size="small" @change="onExpectedChange(index)" />
       <a-button type="link" danger size="small" @click="removeItem(index)">
         <DeleteOutlined />
       </a-button>
     </div>
     <a-button type="dashed" size="small" block style="margin-top: 8px" @click="addItem">
-      <PlusOutlined /> Add Assertion
+      <PlusOutlined /> {{ t('testcase.addAssertion') }}
     </a-button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 
 interface AssertionItem {
@@ -43,23 +44,25 @@ const emit = defineEmits<{
   'update:modelValue': [value: { field: string; operator: string; expected: any }[]]
 }>()
 
-const operators = [
-  { value: 'eq', label: 'equals (==)' },
-  { value: 'neq', label: 'not equals (!=)' },
+const { t } = useI18n()
+
+const operators = computed(() => [
+  { value: 'eq', label: t('testcase.operators.eq') },
+  { value: 'neq', label: t('testcase.operators.neq') },
   { value: 'gt', label: '>' },
   { value: 'gte', label: '>=' },
   { value: 'lt', label: '<' },
   { value: 'lte', label: '<=' },
-  { value: 'in', label: 'in' },
-  { value: 'nin', label: 'not in' },
-  { value: 'contains', label: 'contains' },
-  { value: 'notContains', label: 'not contains' },
-  { value: 'isNull', label: 'is None' },
-  { value: 'isNotNull', label: 'is not None' },
-  { value: 'isEmpty', label: 'is empty' },
-  { value: 'isNotEmpty', label: 'is not empty' },
-  { value: 'matches', label: 'regex matches' },
-]
+  { value: 'in', label: t('testcase.operators.in') },
+  { value: 'nin', label: t('testcase.operators.nin') },
+  { value: 'contains', label: t('testcase.operators.contains') },
+  { value: 'notContains', label: t('testcase.operators.notContains') },
+  { value: 'isNull', label: t('testcase.operators.isNull') },
+  { value: 'isNotNull', label: t('testcase.operators.isNotNull') },
+  { value: 'isEmpty', label: t('testcase.operators.isEmpty') },
+  { value: 'isNotEmpty', label: t('testcase.operators.isNotEmpty') },
+  { value: 'matches', label: t('testcase.operators.matches') },
+])
 
 const fieldSuggestions = [
   { value: 'res.status' },

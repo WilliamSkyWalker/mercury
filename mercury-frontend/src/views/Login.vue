@@ -3,21 +3,21 @@
     <div class="login-card">
       <div class="login-header">
         <h1>Mercury</h1>
-        <p class="subtitle">QA Testing Platform</p>
+        <p class="subtitle">{{ t('auth.subtitle') }}</p>
       </div>
       <a-form layout="vertical" @finish="handleLogin">
-        <a-form-item label="Email">
+        <a-form-item :label="t('auth.email')">
           <a-input
             v-model:value="email"
-            placeholder="name@shanda.com"
+            :placeholder="t('auth.emailPlaceholder')"
             size="large"
             @pressEnter="handleLogin"
           />
         </a-form-item>
-        <a-form-item label="Password">
+        <a-form-item :label="t('auth.password')">
           <a-input-password
             v-model:value="password"
-            placeholder="Password"
+            :placeholder="t('auth.password')"
             size="large"
             @pressEnter="handleLogin"
           />
@@ -29,7 +29,7 @@
           :loading="loading"
           @click="handleLogin"
         >
-          Log in
+          {{ t('auth.login') }}
         </a-button>
         <a-alert
           v-if="errorMsg"
@@ -45,12 +45,14 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { login } from '../api/auth.ts'
 import { useAuthStore } from '../stores/auth.ts'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const email = ref('')
 const password = ref('')
@@ -59,7 +61,7 @@ const errorMsg = ref('')
 
 async function handleLogin() {
   if (!email.value || !password.value) {
-    errorMsg.value = 'Please enter email and password'
+    errorMsg.value = t('auth.missingCredentials')
     return
   }
   errorMsg.value = ''
@@ -69,7 +71,7 @@ async function handleLogin() {
     authStore.setAuth(res.token, res.user)
     router.replace('/')
   } catch (e: any) {
-    errorMsg.value = e.response?.data?.detail || e.message || 'Login failed'
+    errorMsg.value = e.response?.data?.detail || e.message || t('auth.loginFailed')
   } finally {
     loading.value = false
   }

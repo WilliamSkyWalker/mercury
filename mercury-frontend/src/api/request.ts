@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { message } from 'ant-design-vue'
 import router from '../router'
+import { i18n } from '../locales'
 
 const request = axios.create({
   baseURL: '/api',
@@ -39,7 +40,7 @@ request.interceptors.response.use(
         msg = errs.join('; ')
       }
     }
-    msg = msg || error.message || 'Request failed'
+    msg = msg || error.message || i18n.global.t('common.requestFailed')
     message.error(msg)
     return Promise.reject(error)
   }

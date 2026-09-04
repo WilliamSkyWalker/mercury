@@ -4,19 +4,19 @@
       <!-- Top summary stats -->
       <a-row :gutter="[16, 12]" class="pm-stats-row">
         <a-col :xs="12" :sm="4">
-          <a-statistic title="Test Cases" :value="data?.summary.total_cases || 0" />
+          <a-statistic :title="t('dashboard.testCases')" :value="data?.summary.total_cases || 0" />
         </a-col>
         <a-col :xs="12" :sm="4">
-          <a-statistic title="Test Plans" :value="data?.summary.total_plans || 0" />
+          <a-statistic :title="t('dashboard.testPlans')" :value="data?.summary.total_plans || 0" />
         </a-col>
         <a-col :xs="12" :sm="4">
-          <a-statistic title="Environments" :value="data?.summary.total_envs || 0" />
+          <a-statistic :title="t('dashboard.environments')" :value="data?.summary.total_envs || 0" />
         </a-col>
         <a-col :xs="12" :sm="4">
-          <a-statistic title="Runs (7d)" :value="data?.summary.total_runs_7d || 0" />
+          <a-statistic :title="t('dashboard.runs7d')" :value="data?.summary.total_runs_7d || 0" />
         </a-col>
         <a-col :xs="24" :sm="8">
-          <a-statistic title="Avg Pass Rate (7d)" :suffix="'%'">
+          <a-statistic :title="t('dashboard.avgPassRate7d')" :suffix="'%'">
             <template #formatter>
               <span :style="{ color: (data?.summary.avg_pass_rate_7d || 0) >= 90 ? '#52c41a' : '#ff4d4f' }">
                 {{ data?.summary.avg_pass_rate_7d || 0 }}
@@ -29,20 +29,20 @@
       <!-- Monitor Health + Top Failures -->
       <a-row :gutter="[16, 16]" class="pm-row">
         <a-col :xs="24" :lg="14">
-          <a-card title="Monitor Health" size="small">
+          <a-card :title="t('dashboard.monitorHealth')" size="small">
             <template #extra>
-              <span class="pm-card-hint">{{ monitors.length }} active</span>
+              <span class="pm-card-hint">{{ t('dashboard.activeCount', { count: monitors.length }) }}</span>
             </template>
-            <a-empty v-if="!monitorsLoading && monitors.length === 0" description="No active monitors" />
+            <a-empty v-if="!monitorsLoading && monitors.length === 0" :description="t('dashboard.noActiveMonitors')" />
             <a-spin v-else :spinning="monitorsLoading">
               <table class="pm-table">
                 <thead>
                   <tr>
-                    <th>Monitor</th>
-                    <th>Cadence</th>
-                    <th>Last Run</th>
-                    <th>Pass Rate</th>
-                    <th>Next Run</th>
+                    <th>{{ t('dashboard.monitor') }}</th>
+                    <th>{{ t('dashboard.cadence') }}</th>
+                    <th>{{ t('dashboard.lastRun') }}</th>
+                    <th>{{ t('dashboard.passRate') }}</th>
+                    <th>{{ t('dashboard.nextRun') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -61,7 +61,7 @@
                       >
                         {{ formatAge(m.age_seconds) }}
                       </router-link>
-                      <span v-else class="pm-text-dim">never</span>
+                      <span v-else class="pm-text-dim">{{ t('common.never') }}</span>
                     </td>
                     <td>
                       <span v-if="m.last_pass_rate !== null" :style="{ color: passRateColor(m.last_pass_rate) }">
@@ -78,18 +78,18 @@
         </a-col>
 
         <a-col :xs="24" :lg="10">
-          <a-card title="Top Failing Cases (7d)" size="small">
+          <a-card :title="t('dashboard.topFailingCases')" size="small">
             <template #extra>
-              <span class="pm-card-hint">≥3 runs</span>
+              <span class="pm-card-hint">{{ t('dashboard.minimumRuns') }}</span>
             </template>
-            <a-empty v-if="!topFailuresLoading && topFailures.length === 0" description="No failures" />
+            <a-empty v-if="!topFailuresLoading && topFailures.length === 0" :description="t('dashboard.noFailures')" />
             <a-spin v-else :spinning="topFailuresLoading">
               <table class="pm-table">
                 <thead>
                   <tr>
-                    <th>Case</th>
-                    <th class="pm-th-num">Fails</th>
-                    <th class="pm-th-num">Rate</th>
+                    <th>{{ t('dashboard.case') }}</th>
+                    <th class="pm-th-num">{{ t('dashboard.fails') }}</th>
+                    <th class="pm-th-num">{{ t('dashboard.rate') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -120,8 +120,8 @@
       <!-- Pass rate by plan -->
       <a-row :gutter="[16, 16]" class="pm-row">
         <a-col :span="24">
-          <a-card title="Pass Rate by Test Plan (7d)" size="small">
-            <a-empty v-if="!planTrendsLoading && plans.length === 0" description="No executions in the last 7 days" />
+          <a-card :title="t('dashboard.passRateByPlan')" size="small">
+            <a-empty v-if="!planTrendsLoading && plans.length === 0" :description="t('dashboard.noExecutions')" />
             <a-spin v-else :spinning="planTrendsLoading">
               <div class="pm-plan-grid">
                 <div v-for="p in plans" :key="p.testplan_id" class="pm-plan-row">
@@ -131,7 +131,7 @@
                   </div>
                   <div class="pm-plan-meta">
                     <span :style="{ color: passRateColor(p.avg_pass_rate_7d) }" class="pm-mono">{{ p.avg_pass_rate_7d }}%</span>
-                    <span class="pm-text-dim pm-mono">{{ p.total_runs_7d }} runs</span>
+                    <span class="pm-text-dim pm-mono">{{ t('dashboard.runsCount', { count: p.total_runs_7d }) }}</span>
                   </div>
                 </div>
               </div>
@@ -143,7 +143,7 @@
       <!-- Recent failures -->
       <a-row :gutter="[16, 16]" class="pm-row">
         <a-col :span="24">
-          <a-card title="Recent Failures" size="small">
+          <a-card :title="t('dashboard.recentFailures')" size="small">
             <a-list :data-source="data?.recent_failures || []" size="small">
               <template #renderItem="{ item }">
                 <a-list-item>
@@ -167,10 +167,12 @@
 
 <script setup lang="ts">
 import { ref, h, watch, defineComponent } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { statsApi, type DashboardData, type MonitorRow, type TopFailureRow, type PlanTrendRow } from '../api/stats.ts'
 import { useProjectStore } from '../stores/project.ts'
 
 const projectStore = useProjectStore()
+const { t } = useI18n()
 
 const data = ref<DashboardData | null>(null)
 const monitors = ref<MonitorRow[]>([])
@@ -200,7 +202,11 @@ async function loadAll() {
 watch(() => projectStore.currentProjectId, () => { loadAll() }, { immediate: true })
 
 function healthLabel(h: string) {
-  return { ok: 'OK', stale: 'STALE', dead: 'DEAD' }[h] || h
+  return {
+    ok: t('dashboard.healthOk'),
+    stale: t('dashboard.healthStale'),
+    dead: t('dashboard.healthDead'),
+  }[h] || h
 }
 
 function passRateColor(rate: number) {
@@ -216,22 +222,22 @@ function failRateColor(rate: number) {
 }
 
 function formatAge(seconds: number | null): string {
-  if (seconds === null || seconds === undefined) return 'never'
-  if (seconds < 60) return `${seconds}s ago`
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  return `${Math.floor(seconds / 86400)}d ago`
+  if (seconds === null || seconds === undefined) return t('common.never')
+  if (seconds < 60) return t('dashboard.secondsAgo', { count: seconds })
+  if (seconds < 3600) return t('dashboard.minutesAgo', { count: Math.floor(seconds / 60) })
+  if (seconds < 86400) return t('dashboard.hoursAgo', { count: Math.floor(seconds / 3600) })
+  return t('dashboard.daysAgo', { count: Math.floor(seconds / 86400) })
 }
 
 function formatNextRun(iso: string | null): string {
   if (!iso) return '—'
   const d = new Date(iso)
   const diffMs = d.getTime() - Date.now()
-  if (diffMs < 0) return 'pending'
+  if (diffMs < 0) return t('dashboard.pending')
   const sec = Math.floor(diffMs / 1000)
-  if (sec < 60) return `in ${sec}s`
-  if (sec < 3600) return `in ${Math.floor(sec / 60)}m`
-  if (sec < 86400) return `in ${Math.floor(sec / 3600)}h`
+  if (sec < 60) return t('dashboard.inSeconds', { count: sec })
+  if (sec < 3600) return t('dashboard.inMinutes', { count: Math.floor(sec / 60) })
+  if (sec < 86400) return t('dashboard.inHours', { count: Math.floor(sec / 3600) })
   return d.toISOString().substring(0, 16).replace('T', ' ')
 }
 

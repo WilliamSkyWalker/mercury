@@ -3,7 +3,7 @@
     <div v-if="loading" class="pm-tree-loading">
       <a-spin size="small" />
     </div>
-    <div v-else-if="!treeData.length" class="pm-empty">No collections</div>
+    <div v-else-if="!treeData.length" class="pm-empty">{{ t('testcase.noCollections') }}</div>
     <div v-else class="pm-tree-nodes">
       <CollectionNode
         v-for="node in treeData"
@@ -24,26 +24,27 @@
         :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }"
       >
         <template v-if="contextMenu.type === 'folder'">
-          <div class="pm-context-item" @click="onContextAction({ key: 'add-folder' })">Add Subfolder</div>
-          <div class="pm-context-item" @click="onContextAction({ key: 'add-request' })">Add Request</div>
-          <div class="pm-context-item" @click="onContextAction({ key: 'rename' })">Rename</div>
-          <div class="pm-context-item pm-context-danger" @click="onContextAction({ key: 'delete-folder' })">Delete</div>
+          <div class="pm-context-item" @click="onContextAction({ key: 'add-folder' })">{{ t('testcase.addSubfolder') }}</div>
+          <div class="pm-context-item" @click="onContextAction({ key: 'add-request' })">{{ t('testcase.addRequest') }}</div>
+          <div class="pm-context-item" @click="onContextAction({ key: 'rename' })">{{ t('testcase.rename') }}</div>
+          <div class="pm-context-item pm-context-danger" @click="onContextAction({ key: 'delete-folder' })">{{ t('common.delete') }}</div>
         </template>
         <template v-else>
-          <div class="pm-context-item pm-context-danger" @click="onContextAction({ key: 'delete-request' })">Delete</div>
+          <div class="pm-context-item pm-context-danger" @click="onContextAction({ key: 'delete-request' })">{{ t('common.delete') }}</div>
         </template>
       </div>
     </Teleport>
 
     <!-- Folder modal -->
-    <a-modal v-model:open="folderModal.visible" :title="folderModal.title" :confirm-loading="folderModalLoading" @ok="onFolderModalOk">
-      <a-input v-model:value="folderModal.name" placeholder="Folder name" @pressEnter="onFolderModalOk" />
+    <a-modal v-model:open="folderModal.visible" :title="t(folderModal.titleKey)" :confirm-loading="folderModalLoading" @ok="onFolderModalOk">
+      <a-input v-model:value="folderModal.name" :placeholder="t('testcase.folderName')" @pressEnter="onFolderModalOk" />
     </a-modal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onBeforeUnmount, defineComponent, h } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { message, Modal } from 'ant-design-vue'
 import { folderApi, type Folder } from '../../api/folders.ts'
 import { testcaseApi } from '../../api/testcases.ts'
@@ -51,6 +52,7 @@ import { useProjectStore } from '../../stores/project.ts'
 import { useLoading } from '../../composables/useLoading.ts'
 
 const projectStore = useProjectStore()
+const { t } = useI18n()
 
 interface TreeNode {
   key: string           // 'folder-1' or 'case-42'
@@ -70,7 +72,7 @@ const treeData = ref<TreeNode[]>([])
 const selectedKey = ref<string>('')
 const loading = ref(false)
 const contextMenu = reactive({ visible: false, x: 0, y: 0, key: '', type: '' as 'folder' | 'case', id: 0, folderId: 0 })
-const folderModal = reactive({ visible: false, title: '', name: '', parentId: null as number | null, editId: null as number | null })
+const folderModal = reactive({ visible: false, titleKey: 'testcase.newCollection', name: '', parentId: null as number | null, editId: null as number | null })
 
 async function loadTree() {
   loading.value = true
@@ -164,7 +166,7 @@ onBeforeUnmount(() => {
 })
 
 function onAddRoot() {
-  folderModal.title = 'New Collection'
+  folderModal.titleKey = 'testcase.newCollection'
   folderModal.name = ''
   folderModal.parentId = null
   folderModal.editId = null
@@ -174,13 +176,13 @@ function onAddRoot() {
 function onContextAction({ key }: { key: string }) {
   contextMenu.visible = false
   if (key === 'add-folder') {
-    folderModal.title = 'New Subfolder'
+    folderModal.titleKey = 'testcase.newSubfolder'
     folderModal.name = ''
     folderModal.parentId = contextMenu.id
     folderModal.editId = null
     folderModal.visible = true
   } else if (key === 'rename') {
-    folderModal.title = 'Rename'
+    folderModal.titleKey = 'testcase.rename'
     folderModal.name = ''
     folderModal.parentId = null
     folderModal.editId = contextMenu.id
@@ -188,9 +190,10 @@ function onContextAction({ key }: { key: string }) {
   } else if (key === 'delete-folder') {
     const id = contextMenu.id
     Modal.confirm({
-      title: 'Delete folder?',
-      content: 'This will also delete all subfolders and requests inside.',
-      okText: 'Delete',
+      title: t('testcase.deleteFolderTitle'),
+      content: t('testcase.deleteFolderDescription'),
+      okText: t('common.delete'),
+      cancelText: t('common.cancel'),
       okType: 'danger',
       onOk: () => deleteFolder(id),
     })
@@ -200,9 +203,10 @@ function onContextAction({ key }: { key: string }) {
   } else if (key === 'delete-request') {
     const id = contextMenu.id
     Modal.confirm({
-      title: 'Delete request?',
-      content: 'This action cannot be undone.',
-      okText: 'Delete',
+      title: t('testcase.deleteRequestTitle'),
+      content: t('testcase.cannotUndo'),
+      okText: t('common.delete'),
+      cancelText: t('common.cancel'),
       okType: 'danger',
       onOk: () => deleteRequest(id),
     })
@@ -211,15 +215,15 @@ function onContextAction({ key }: { key: string }) {
 
 const [onFolderModalOk, folderModalLoading] = useLoading(async () => {
   if (!folderModal.name.trim()) {
-    message.warning('Please enter a name')
+    message.warning(t('testcase.enterName'))
     return
   }
   if (folderModal.editId) {
     await folderApi.update(folderModal.editId, { name: folderModal.name })
-    message.success('Renamed')
+    message.success(t('testcase.renamed'))
   } else {
     await folderApi.create({ name: folderModal.name, parent: folderModal.parentId, project: projectStore.currentProjectId! })
-    message.success('Created')
+    message.success(t('common.createdMessage'))
   }
   folderModal.visible = false
   await loadTree()
@@ -227,7 +231,7 @@ const [onFolderModalOk, folderModalLoading] = useLoading(async () => {
 
 const [deleteFolder] = useLoading(async (id: number) => {
   await folderApi.delete(id)
-  message.success('Deleted')
+  message.success(t('common.deleted'))
   if (selectedKey.value === `folder-${id}`) {
     selectedKey.value = ''
     emit('select', { type: null, id: null, folderId: null })
@@ -237,7 +241,7 @@ const [deleteFolder] = useLoading(async (id: number) => {
 
 const [deleteRequest] = useLoading(async (id: number) => {
   await testcaseApi.delete(id)
-  message.success('Deleted')
+  message.success(t('common.deleted'))
   if (selectedKey.value === `case-${id}`) {
     selectedKey.value = ''
     emit('select', { type: null, id: null, folderId: null })

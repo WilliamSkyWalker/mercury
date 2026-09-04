@@ -17,15 +17,15 @@
         </div>
       </div>
       <div class="pm-topbar-right">
-        <a-dropdown :trigger="['click']">
+        <a-dropdown v-model:open="userMenuOpen" :trigger="['click']">
           <div class="pm-project-btn">
             <ProjectOutlined class="pm-project-btn-icon" />
-            <span class="pm-project-btn-name">{{ projectStore.currentProject?.name || 'Project' }}</span>
+            <span class="pm-project-btn-name">{{ projectStore.currentProject?.name || t('common.project') }}</span>
             <DownOutlined style="font-size: 10px; opacity: 0.6" />
           </div>
           <template #overlay>
             <div class="pm-project-dropdown">
-              <div class="pm-project-dropdown-header">Switch Project</div>
+              <div class="pm-project-dropdown-header">{{ t('nav.switchProject') }}</div>
               <div class="pm-project-dropdown-list">
                 <div
                   v-for="p in projectStore.projects"
@@ -41,7 +41,7 @@
               <div class="pm-project-dropdown-divider" />
               <div class="pm-project-dropdown-item pm-project-manage" @click="onProjectSwitch({ key: 'manage' })">
                 <SettingOutlined style="font-size: 13px" />
-                <span>Manage Projects</span>
+                <span>{{ t('nav.manageProjects') }}</span>
               </div>
             </div>
           </template>
@@ -55,15 +55,18 @@
           <template #overlay>
             <a-menu @click="onUserMenuClick">
               <a-menu-item key="docs">
-                <ReadOutlined /> Reference Docs
+                <ReadOutlined /> {{ t('nav.referenceDocs') }}
+              </a-menu-item>
+              <a-menu-item key="settings">
+                <GlobalOutlined /> {{ t('nav.settings') }}
               </a-menu-item>
               <a-menu-divider />
               <a-menu-item v-if="authStore.user?.is_admin" key="admin">
-                <SettingOutlined /> Admin
+                <SettingOutlined /> {{ t('common.admin') }}
               </a-menu-item>
               <a-menu-divider v-if="authStore.user?.is_admin" />
               <a-menu-item key="logout">
-                <LogoutOutlined /> Logout
+                <LogoutOutlined /> {{ t('nav.logout') }}
               </a-menu-item>
             </a-menu>
           </template>
@@ -89,49 +92,62 @@
       </div>
     </div>
 
+    <!-- Settings Modal -->
+    <a-modal v-model:open="settingsVisible" :title="t('settings.title')" width="480px" :footer="null">
+      <a-form layout="vertical">
+        <a-form-item :label="t('settings.language')">
+          <p class="pm-settings-description">{{ t('settings.languageDescription') }}</p>
+          <a-radio-group :value="locale" button-style="solid" @change="onLocaleChange">
+            <a-radio-button value="zh-CN">{{ t('settings.chinese') }}</a-radio-button>
+            <a-radio-button value="en-US">{{ t('settings.english') }}</a-radio-button>
+          </a-radio-group>
+        </a-form-item>
+      </a-form>
+    </a-modal>
+
     <!-- Reference Docs Modal -->
-    <a-modal v-model:open="docsVisible" title="Script & Assertion Reference" width="720px" :footer="null">
+    <a-modal v-model:open="docsVisible" :title="t('docs.title')" width="720px" :footer="null">
       <div class="pm-docs">
-        <h3>Script Language</h3>
-        <p>Scripts use <strong>Python</strong> syntax. Available in Pre-request and Post-response tabs.</p>
+        <h3>{{ t('docs.scriptLanguage') }}</h3>
+        <p>{{ t('docs.scriptLanguageDescription') }}</p>
 
-        <h3>mercury API</h3>
+        <h3>{{ t('docs.mercuryApi') }}</h3>
         <table class="pm-docs-table">
           <tbody>
-          <tr><td><code>mercury.getVar(name)</code></td><td>Get a runtime variable (set by previous cases)</td></tr>
-          <tr><td><code>mercury.setVar(name, value)</code></td><td>Set a runtime variable (available in subsequent cases)</td></tr>
-          <tr><td><code>mercury.getEnvVar(name)</code></td><td>Get an environment variable</td></tr>
-          <tr><td><code>mercury.getEnvName()</code></td><td>Get current environment name</td></tr>
+          <tr><td><code>mercury.getVar(name)</code></td><td>{{ t('docs.getRuntimeVar') }}</td></tr>
+          <tr><td><code>mercury.setVar(name, value)</code></td><td>{{ t('docs.setRuntimeVar') }}</td></tr>
+          <tr><td><code>mercury.getEnvVar(name)</code></td><td>{{ t('docs.getEnvVar') }}</td></tr>
+          <tr><td><code>mercury.getEnvName()</code></td><td>{{ t('docs.getEnvName') }}</td></tr>
           </tbody>
         </table>
 
-        <h3>Request Object <code>req</code> (Pre-request only)</h3>
+        <h3>{{ t('docs.requestObject') }}</h3>
         <table class="pm-docs-table">
           <tbody>
-          <tr><td><code>req.url</code></td><td>Request URL (read/write)</td></tr>
-          <tr><td><code>req.method</code></td><td>HTTP method (read/write)</td></tr>
-          <tr><td><code>req.headers</code></td><td>Headers dict (read/write/delete)</td></tr>
-          <tr><td><code>req.body</code></td><td>Request body (read/write)</td></tr>
+          <tr><td><code>req.url</code></td><td>{{ t('docs.requestUrl') }}</td></tr>
+          <tr><td><code>req.method</code></td><td>{{ t('docs.httpMethod') }}</td></tr>
+          <tr><td><code>req.headers</code></td><td>{{ t('docs.headersDict') }}</td></tr>
+          <tr><td><code>req.body</code></td><td>{{ t('docs.requestBody') }}</td></tr>
           </tbody>
         </table>
 
-        <h3>Response Object <code>res</code> (Post-response only)</h3>
+        <h3>{{ t('docs.responseObject') }}</h3>
         <table class="pm-docs-table">
           <tbody>
-          <tr><td><code>res.status</code></td><td>HTTP status code</td></tr>
-          <tr><td><code>res.body</code></td><td>Response body (supports dot access: <code>res.body.data.id</code>)</td></tr>
-          <tr><td><code>res.headers</code></td><td>Response headers dict</td></tr>
+          <tr><td><code>res.status</code></td><td>{{ t('docs.statusCode') }}</td></tr>
+          <tr><td><code>res.body</code></td><td>{{ t('docs.responseBody') }}</td></tr>
+          <tr><td><code>res.headers</code></td><td>{{ t('docs.responseHeaders') }}</td></tr>
           </tbody>
         </table>
 
-        <h3>Available Modules</h3>
-        <p><code>json</code>, <code>base64</code>, and Python builtins (<code>str</code>, <code>int</code>, <code>len</code>, <code>range</code>, <code>sorted</code>, <code>map</code>, <code>filter</code>, etc.)</p>
+        <h3>{{ t('docs.availableModules') }}</h3>
+        <p>{{ t('docs.modulesDescription') }}</p>
 
-        <h3>Script Example</h3>
+        <h3>{{ t('docs.scriptExample') }}</h3>
         <pre class="pm-docs-code"># Pre-request: modify headers per environment
 if mercury.getEnvName() in ("prod_visit", "newtest_visit"):
     req.headers.pop("Authorization", None)
-    req.headers["shanda_identity"] = mercury.getEnvVar("shanda_identity")
+    req.headers["visitor_identity"] = mercury.getEnvVar("visitor_identity")
 
 # Post-response: extract token for subsequent cases
 token = res.body.access_token
@@ -139,66 +155,66 @@ mercury.setVar("token", token)
 payload = json.loads(base64.b64decode(token.split('.')[1] + '=='))
 mercury.setVar("userId", payload["sub"])</pre>
 
-        <h3>Variable Substitution</h3>
-        <p>Use <code v-pre>{{variableName}}</code> in URL, headers, params, and body. Runtime variables (from <code>mercury.setVar</code>) take priority over environment variables.</p>
+        <h3>{{ t('docs.variableSubstitution') }}</h3>
+        <p>{{ t('docs.variableSubstitutionDescription') }}</p>
 
-        <h3>Assertion Fields</h3>
+        <h3>{{ t('docs.assertionFields') }}</h3>
         <table class="pm-docs-table">
           <tbody>
-          <tr><td><code>res.status</code></td><td>HTTP status code</td></tr>
-          <tr><td><code>res.responseTime</code></td><td>Response duration in ms</td></tr>
-          <tr><td><code>res.body</code></td><td>Entire response body</td></tr>
-          <tr><td><code>res.body.data.id</code></td><td>Nested field access</td></tr>
-          <tr><td><code>res.body.items[0].name</code></td><td>Array index access</td></tr>
-          <tr><td><code>res.body.items[*].status</code></td><td>Wildcard: assert all items</td></tr>
-          <tr><td><code>res.body.data.length</code></td><td>Array/string length</td></tr>
-          <tr><td><code>res.headers.x-trace-id</code></td><td>Response header (case-insensitive)</td></tr>
+          <tr><td><code>res.status</code></td><td>{{ t('docs.statusCode') }}</td></tr>
+          <tr><td><code>res.responseTime</code></td><td>{{ t('docs.responseDuration') }}</td></tr>
+          <tr><td><code>res.body</code></td><td>{{ t('docs.entireResponseBody') }}</td></tr>
+          <tr><td><code>res.body.data.id</code></td><td>{{ t('docs.nestedFieldAccess') }}</td></tr>
+          <tr><td><code>res.body.items[0].name</code></td><td>{{ t('docs.arrayIndexAccess') }}</td></tr>
+          <tr><td><code>res.body.items[*].status</code></td><td>{{ t('docs.wildcardAccess') }}</td></tr>
+          <tr><td><code>res.body.data.length</code></td><td>{{ t('docs.arrayStringLength') }}</td></tr>
+          <tr><td><code>res.headers.x-trace-id</code></td><td>{{ t('docs.caseInsensitiveHeader') }}</td></tr>
           </tbody>
         </table>
 
-        <h3>Common Assertion Examples</h3>
+        <h3>{{ t('docs.commonExamples') }}</h3>
         <table class="pm-docs-table">
           <tbody>
-          <tr><td><code>res.status</code> <code>eq</code> <code>200</code></td><td>Status code is 200</td></tr>
-          <tr><td><code>res.responseTime</code> <code>lte</code> <code>1000</code></td><td>Response time &le; 1000ms</td></tr>
-          <tr><td><code>res.body.data.length</code> <code>gt</code> <code>0</code></td><td>Array has at least 1 item</td></tr>
-          <tr><td><code>res.body.data.length</code> <code>eq</code> <code>10</code></td><td>Array has exactly 10 items</td></tr>
-          <tr><td><code>res.body.total</code> <code>gte</code> <code>100</code></td><td>Numeric field &ge; 100</td></tr>
-          <tr><td><code>res.body.name</code> <code>contains</code> <code>"test"</code></td><td>String contains "test"</td></tr>
-          <tr><td><code>res.body.items[*].status</code> <code>eq</code> <code>"active"</code></td><td>All items have status "active"</td></tr>
-          <tr><td><code>res.body.data.name</code> <code>eq</code> <code>"Alice"</code></td><td>JSON key value: <code>{"data":{"name":"Alice"}}</code></td></tr>
-          <tr><td><code>res.body.data.tags[1]</code> <code>eq</code> <code>"vip"</code></td><td>Array element: <code>{"data":{"tags":["new","vip"]}}</code></td></tr>
-          <tr><td><code>res.body.code</code> <code>eq</code> <code>0</code></td><td>Top-level key: <code>{"code":0,"data":{...}}</code></td></tr>
+          <tr><td><code>res.status</code> <code>eq</code> <code>200</code></td><td>{{ t('docs.statusIs200') }}</td></tr>
+          <tr><td><code>res.responseTime</code> <code>lte</code> <code>1000</code></td><td>{{ t('docs.responseWithin') }}</td></tr>
+          <tr><td><code>res.body.data.length</code> <code>gt</code> <code>0</code></td><td>{{ t('docs.atLeastOne') }}</td></tr>
+          <tr><td><code>res.body.data.length</code> <code>eq</code> <code>10</code></td><td>{{ t('docs.exactlyTen') }}</td></tr>
+          <tr><td><code>res.body.total</code> <code>gte</code> <code>100</code></td><td>{{ t('docs.numericAtLeast') }}</td></tr>
+          <tr><td><code>res.body.name</code> <code>contains</code> <code>"test"</code></td><td>{{ t('docs.stringContains') }}</td></tr>
+          <tr><td><code>res.body.items[*].status</code> <code>eq</code> <code>"active"</code></td><td>{{ t('docs.allActive') }}</td></tr>
+          <tr><td><code>res.body.data.name</code> <code>eq</code> <code>"Alice"</code></td><td>{{ t('docs.jsonKeyValue') }}</td></tr>
+          <tr><td><code>res.body.data.tags[1]</code> <code>eq</code> <code>"vip"</code></td><td>{{ t('docs.arrayElement') }}</td></tr>
+          <tr><td><code>res.body.code</code> <code>eq</code> <code>0</code></td><td>{{ t('docs.topLevelKey') }}</td></tr>
           </tbody>
         </table>
 
-        <h3>Assertion Operators</h3>
+        <h3>{{ t('docs.assertionOperators') }}</h3>
         <table class="pm-docs-table">
           <tbody>
-          <tr><td><code>eq</code> / <code>neq</code></td><td>Equal / Not equal</td></tr>
-          <tr><td><code>gt</code> / <code>gte</code> / <code>lt</code> / <code>lte</code></td><td>Greater than / Greater or equal / Less than / Less or equal</td></tr>
-          <tr><td><code>in</code> / <code>nin</code></td><td>Value in list / Not in list</td></tr>
-          <tr><td><code>contains</code> / <code>notContains</code></td><td>String contains / Not contains</td></tr>
-          <tr><td><code>isNull</code> / <code>isNotNull</code></td><td>Value is null / Not null</td></tr>
-          <tr><td><code>isEmpty</code> / <code>isNotEmpty</code></td><td>Empty (null or length 0) / Not empty</td></tr>
-          <tr><td><code>matches</code></td><td>Regex match</td></tr>
+          <tr><td><code>eq</code> / <code>neq</code></td><td>{{ t('docs.equalNotEqual') }}</td></tr>
+          <tr><td><code>gt</code> / <code>gte</code> / <code>lt</code> / <code>lte</code></td><td>{{ t('docs.comparisons') }}</td></tr>
+          <tr><td><code>in</code> / <code>nin</code></td><td>{{ t('docs.listMembership') }}</td></tr>
+          <tr><td><code>contains</code> / <code>notContains</code></td><td>{{ t('docs.stringContainment') }}</td></tr>
+          <tr><td><code>isNull</code> / <code>isNotNull</code></td><td>{{ t('docs.nullChecks') }}</td></tr>
+          <tr><td><code>isEmpty</code> / <code>isNotEmpty</code></td><td>{{ t('docs.emptyChecks') }}</td></tr>
+          <tr><td><code>matches</code></td><td>{{ t('docs.regexMatch') }}</td></tr>
           </tbody>
         </table>
 
-        <h3>File Upload (multipart/form-data)</h3>
-        <p>Upload files via the Body tab (multipart type). Reference uploaded files in field values with <code>@file(filename)</code>.</p>
+        <h3>{{ t('docs.fileUpload') }}</h3>
+        <p>{{ t('docs.fileUploadDescription') }}</p>
 
-        <h3>Performance Data Files</h3>
-        <p>Parameterize performance test requests with external data. Each data file is a <strong>TSV</strong> (tab-separated) file where each column maps to a variable name.</p>
+        <h3>{{ t('docs.performanceFiles') }}</h3>
+        <p>{{ t('docs.performanceFilesDescription') }}</p>
         <table class="pm-docs-table">
           <tbody>
-          <tr><td><strong>Variables</strong></td><td>Comma-separated column names, e.g. <code>articleId,userId</code></td></tr>
-          <tr><td><strong>Filename</strong></td><td>TSV file placed next to the compiled binary</td></tr>
-          <tr><td><strong>Mode</strong></td><td><code>sequential</code> (round-robin rows) or <code>random</code></td></tr>
+          <tr><td><strong>{{ t('docs.variables') }}</strong></td><td>{{ t('docs.variablesDescription') }}</td></tr>
+          <tr><td><strong>{{ t('docs.filename') }}</strong></td><td>{{ t('docs.filenameDescription') }}</td></tr>
+          <tr><td><strong>{{ t('docs.mode') }}</strong></td><td>{{ t('docs.modeDescription') }}</td></tr>
           </tbody>
         </table>
-        <p v-pre>Use <code>{{variableName}}</code> in testcase URL, headers, or body to reference data file values. Each virtual user picks a row from the TSV file per request.</p>
-        <p>Example TSV file (<code>data.tsv</code>):</p>
+        <p>{{ t('docs.testcaseVariableDescription') }}</p>
+        <p>{{ t('docs.exampleTsv') }}</p>
         <pre class="pm-docs-code">article001	user001
 article002	user002
 article003	user003</pre>
@@ -208,7 +224,8 @@ article003	user003</pre>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, h } from 'vue'
+import { computed, ref, onMounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import {
   DashboardOutlined,
@@ -224,24 +241,29 @@ import {
   UserOutlined,
   LogoutOutlined,
   ReadOutlined,
+  GlobalOutlined,
 } from '@ant-design/icons-vue'
 import { useProjectStore } from '../../stores/project.ts'
 import { useAuthStore } from '../../stores/auth.ts'
+import { setAppLocale, type AppLocale } from '../../locales'
 
 const route = useRoute()
 const router = useRouter()
 const projectStore = useProjectStore()
 const authStore = useAuthStore()
+const { t, locale } = useI18n()
 const docsVisible = ref(false)
+const settingsVisible = ref(false)
+const userMenuOpen = ref(false)
 
-const navTabs = [
-  { key: 'dashboard', label: 'Dashboard', short: 'Home', icon: DashboardOutlined },
-  { key: 'testcases', label: 'Collections', short: 'Cases', icon: ExperimentOutlined },
-  { key: 'testplans', label: 'Plans', short: 'Plans', icon: OrderedListOutlined },
-  { key: 'executions', label: 'Tasks', short: 'Tasks', icon: HistoryOutlined },
-  { key: 'schedules', label: 'Schedules', short: 'Cron', icon: ClockCircleOutlined },
-  { key: 'perf', label: 'Load Test', short: 'Perf', icon: ThunderboltOutlined },
-]
+const navTabs = computed(() => [
+  { key: 'dashboard', label: t('nav.dashboard'), short: t('nav.home'), icon: DashboardOutlined },
+  { key: 'testcases', label: t('nav.collections'), short: t('nav.cases'), icon: ExperimentOutlined },
+  { key: 'testplans', label: t('nav.plans'), short: t('nav.plans'), icon: OrderedListOutlined },
+  { key: 'executions', label: t('nav.tasks'), short: t('nav.tasks'), icon: HistoryOutlined },
+  { key: 'schedules', label: t('nav.schedules'), short: t('nav.cron'), icon: ClockCircleOutlined },
+  { key: 'perf', label: t('nav.loadTest'), short: t('nav.perf'), icon: ThunderboltOutlined },
+])
 
 const currentRoute = computed(() => {
   const name = route.name as string
@@ -265,15 +287,28 @@ function onProjectSwitch({ key }: { key: string }) {
   }
 }
 
-function onUserMenuClick({ key }: { key: string }) {
-  if (key === 'docs') {
+async function onUserMenuClick({ key, domEvent }: { key: string | number; domEvent?: Event }) {
+  domEvent?.stopPropagation()
+  userMenuOpen.value = false
+  await nextTick()
+  const menuKey = String(key)
+
+  if (menuKey === 'docs') {
+    settingsVisible.value = false
     docsVisible.value = true
-  } else if (key === 'admin') {
+  } else if (menuKey === 'settings') {
+    docsVisible.value = false
+    settingsVisible.value = true
+  } else if (menuKey === 'admin') {
     router.push('/admin')
-  } else if (key === 'logout') {
+  } else if (menuKey === 'logout') {
     authStore.logout()
     router.replace('/login')
   }
+}
+
+function onLocaleChange(event: { target: { value: AppLocale } }) {
+  setAppLocale(event.target.value)
 }
 
 onMounted(() => { projectStore.fetchProjects() })
@@ -472,6 +507,7 @@ onMounted(() => { projectStore.fetchProjects() })
 .pm-docs-table td:first-child { white-space: nowrap; width: 45%; }
 .pm-docs-table td:first-child code { font-size: 12px; }
 .pm-docs-code { background: var(--bg-deep); color: var(--text); font-family: 'SF Mono', Monaco, Menlo, Consolas, monospace; font-size: 12px; line-height: 1.6; padding: 12px; border-radius: 6px; border: 1px solid var(--border); white-space: pre-wrap; overflow-x: auto; margin: 0; }
+.pm-settings-description { color: var(--text-3); margin: 0 0 12px; }
 
 /* Bottom bar — hidden on desktop */
 .pm-bottombar { display: none; }
