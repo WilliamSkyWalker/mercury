@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "mercury": {
+      "command": "python",
+      "args": ["ceres\\mcp_server.py"],
+      "env": {
+        "MERCURY_TEST_URL": "https://test-qa-mercury.aws.solab.ai",
+        "MERCURY_PROD_URL": "https://prod-qa-mercury.aws.solab.ai"
+      }
+    }
+  }
+}

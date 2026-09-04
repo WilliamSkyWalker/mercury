@@ -1,0 +1,53 @@
+variables:
+  MODULE_NAME: app
+
+stages:
+  - deploy_test
+  - deploy_prod
+
+sonarqube_scan:
+  stage: deploy_test
+  image: sonarsource/sonar-scanner-cli:11.2
+  script:
+    - echo "SonarQube scan"
+    - echo $SONARQUBE_URL
+    - sonar-scanner -Dsonar.projectKey=$MODULE_NAME -Dsonar.sources=. -Dsonar.host.url=$SONARQUBE_URL -Dsonar.login=$SONAR_TOKEN
+  tags:
+    - sonar-runner
+  only:
+    - test
+  when: always
+
+deploy_test:
+  stage: deploy_test
+  tags:
+    - test-runner
+  only:
+    - /^test-202.*$/
+  variables:
+    ENV: test
+    MODULE_NAME: app
+  script:
+    - version_check=$(echo $CI_COMMIT_REF_NAME | grep -o '202' | wc -l)
+    - if [[ $version_check -le 0 ]] || [[ "$CI_COMMIT_REF_NAME" =~ ^202.* ]]; then echo "Tag format error. Expected branch-YYYYMMDD-vN"; exit 1; fi
+    - BRANCH_NAME=$(echo $CI_COMMIT_REF_NAME | awk -F '-202' '{print $1}')
+    - echo $BRANCH_NAME
+    - /bin/bash deploy/mercury/deploy.sh $MODULE_NAME $ENV $CI_COMMIT_REF_NAME $BRANCH_NAME "$GITLAB_USER_NAME"
+  when: manual
+
+deploy_prod:
+  stage: deploy_prod
+  tags:
+    - prod-runner
+  only:
+    - /^prod-202.*$/
+  variables:
+    ENV: prod
+    MODULE_NAME: app
+  script:
+    - version_check=$(echo $CI_COMMIT_REF_NAME | grep -o '202' | wc -l)
+    - if [[ $version_check -le 0 ]] || [[ "$CI_COMMIT_REF_NAME" =~ ^202.* ]]; then echo "Tag format error. Expected branch-YYYYMMDD-vN"; exit 1; fi
+    - BRANCH_NAME=$(echo $CI_COMMIT_REF_NAME | awk -F '-202' '{print $1}')
+    - echo $BRANCH_NAME
+    - /bin/bash deploy/mercury/deploy.sh $MODULE_NAME $ENV $CI_COMMIT_REF_NAME $BRANCH_NAME "$GITLAB_USER_NAME"
+  when: manual

@@ -1,0 +1,33 @@
+/.idea/
+.idea/
+*.pyc
+__pycache__/
+mercury/env.json
+mercury/env_bak.json
+/ceres/migrations/
+/mercury.iml
+.claude/
+.mcp.json
+db.sqlite3
+rss_test_feed.runtime.json
+
+# Build artifacts
+/staticfiles/
+/builds/
+templates/static/*.json
+templates/static/*.html
+
+# Frontend build artifacts
+mercury-frontend/dist/
+mercury-frontend/tsconfig.tsbuildinfo
+mercury-frontend/tsconfig.node.tsbuildinfo
+mercury-frontend/vite.config.js
+mercury-frontend/vite.config.d.ts
+
+# Legacy / scripts output
+/output_report/
+scripts/legacy/output_report/
+scripts/legacy/server_log.txt
+scripts/legacy/monitor_scripts_cron_log.txt
+scripts/legacy/mercury.iml
+settings.local.json

@@ -1,0 +1,8 @@
+mercury-frontend/node_modules
+mercury-frontend/dist
+builds/
+**/__pycache__
+*.pyc
+.git
+.idea
+*.iml

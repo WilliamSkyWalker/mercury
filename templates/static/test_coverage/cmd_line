@@ -1,0 +1,1 @@
+genhtml /var/folders/hz/6b2gbqz94gd7ktyv1nw_tgs00000gn/T/tmp9sycs46v/test_coverage.lcov -o /var/folders/hz/6b2gbqz94gd7ktyv1nw_tgs00000gn/T/tmp9sycs46v/html_report --ignore-errors source,unmapped --synthesize-missing
