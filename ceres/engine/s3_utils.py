@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 
 import boto3
+from botocore.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,8 @@ def get_s3_client():
         aws_access_key_id=cfg['aws_access_key_id'],
         aws_secret_access_key=cfg['aws_secret_access_key'],
         region_name=cfg.get('region', 'us-east-1'),
+        endpoint_url=cfg.get('endpoint_url') or None,
+        config=Config(s3={'addressing_style': cfg.get('addressing_style', 'auto')}),
     )
     return client, cfg['bucket_name']
 

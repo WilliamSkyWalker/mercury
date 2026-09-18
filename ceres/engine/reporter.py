@@ -172,6 +172,7 @@ def upload_to_s3(file_path, task_id):
     """Upload report to S3. Returns the S3 URL."""
     from django.conf import settings
     import boto3
+    from botocore.config import Config
 
     env = settings.ENVIRONMENT
     s3_config = None
@@ -190,6 +191,9 @@ def upload_to_s3(file_path, task_id):
         's3',
         aws_access_key_id=s3_config['aws_access_key_id'],
         aws_secret_access_key=s3_config['aws_secret_access_key'],
+        region_name=s3_config.get('region', 'us-east-1'),
+        endpoint_url=s3_config.get('endpoint_url') or None,
+        config=Config(s3={'addressing_style': s3_config.get('addressing_style', 'auto')}),
     )
 
     s3_key = f'qa/mercury/{task_id}.html'

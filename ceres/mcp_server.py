@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mercury MCP Server — lets Claude operate test/prod Mercury via tools.
+"""Mercury MCP Server — lets Claude operate local/test/prod Mercury via tools.
 
 Communicates over stdio (JSON-RPC). Requires `mcp` Python SDK.
 
@@ -11,6 +11,7 @@ Usage (Claude Code):
         "command": "python3",
         "args": ["<path>/ceres/mcp_server.py"],
         "env": {
+          "MERCURY_LOCAL_URL": "http://127.0.0.1:8000",
           "MERCURY_TEST_URL": "https://test-qa-mercury.aws.solab.ai",
           "MERCURY_PROD_URL": "https://prod-qa-mercury.aws.solab.ai"
         }
@@ -30,8 +31,16 @@ from mcp.types import TextContent, Tool
 
 # ── Config ──────────────────────────────────────────────────────────────────
 ENVS = {
+    "local": os.environ.get("MERCURY_LOCAL_URL", "http://127.0.0.1:8000"),
     "nb-test": os.environ.get("MERCURY_TEST_URL", "https://test-qa-mercury.aws.solab.ai"),
     "nb-prod": os.environ.get("MERCURY_PROD_URL", "https://prod-qa-mercury.aws.solab.ai"),
+}
+
+AUTO_LOGIN = {
+    "local": (
+        os.environ.get("MERCURY_LOCAL_EMAIL"),
+        os.environ.get("MERCURY_LOCAL_PASSWORD"),
+    ),
 }
 
 # In-memory JWT storage per environment
@@ -44,14 +53,40 @@ app = Server("mercury")
 def _base_url(env: str) -> str:
     url = ENVS.get(env)
     if not url:
-        raise ValueError(f"Unknown environment '{env}'. Use 'test' or 'prod'.")
+        raise ValueError(f"Unknown environment '{env}'. Use 'local', 'nb-test', or 'nb-prod'.")
     return url.rstrip("/")
+
+
+def _login(env: str, email: str, password: str) -> dict:
+    r = httpx.post(
+        f"{_base_url(env)}/api/auth/login/",
+        json={"email": email, "password": password},
+        timeout=15,
+    )
+    if r.status_code != 200:
+        try:
+            detail = r.json().get("detail", r.text)
+        except (json.JSONDecodeError, ValueError):
+            detail = r.text
+        raise ValueError(f"Login failed ({r.status_code}): {detail}")
+
+    data = _parse_json(r)
+    token = data.get("token")
+    if not token:
+        raise ValueError("Login failed: response did not include a token")
+    _tokens[env] = token
+    return data.get("user", {})
 
 
 def _headers(env: str) -> dict:
     token = _tokens.get(env)
     if not token:
-        raise ValueError(f"Not logged in to '{env}'. Call the 'login' tool first.")
+        email, password = AUTO_LOGIN.get(env, (None, None))
+        if email and password:
+            _login(env, email, password)
+            token = _tokens[env]
+        else:
+            raise ValueError(f"Not logged in to '{env}'. Call the 'login' tool first.")
     return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
 
 
@@ -117,13 +152,13 @@ TOOLS = [
     ),
     Tool(
         name="login",
-        description="Authenticate to Mercury (test or prod) via LDAP. Must be called before any other tool.",
+        description="Authenticate to a local or remote Mercury environment. Must be called before any other tool.",
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"], "description": "Target environment"},
-                "email": {"type": "string", "description": "LDAP email (e.g. user@shanda.com)"},
-                "password": {"type": "string", "description": "LDAP password"},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"], "description": "Target environment"},
+                "email": {"type": "string", "description": "Account email or username"},
+                "password": {"type": "string", "description": "Account password"},
             },
             "required": ["environment", "email", "password"],
         },
@@ -134,7 +169,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
             },
             "required": ["environment"],
         },
@@ -145,7 +180,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer", "description": "Project ID"},
                 "search": {"type": "string", "description": "Case name substring filter"},
                 "page_size": {"type": "integer", "description": "Max results (default 50)"},
@@ -159,7 +194,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Testcase ID"},
             },
             "required": ["environment", "id"],
@@ -171,7 +206,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer"},
                 "case_name": {"type": "string"},
                 "method": {"type": "string", "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]},
@@ -203,7 +238,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Testcase ID"},
             },
             "required": ["environment", "id"],
@@ -215,7 +250,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer"},
                 "case_name": {"type": "string"},
                 "method": {"type": "string"},
@@ -245,7 +280,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Testcase ID"},
                 "env_id": {"type": "integer", "description": "Environment (Env) ID to use for variables"},
             },
@@ -258,7 +293,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer", "description": "Project ID"},
             },
             "required": ["environment"],
@@ -270,7 +305,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer"},
             },
             "required": ["environment", "id"],
@@ -282,7 +317,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Testplan ID"},
             },
             "required": ["environment", "id"],
@@ -294,7 +329,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Testplan ID"},
                 "case_ids": {"type": "array", "items": {"type": "integer"}, "description": "Testcase IDs to add"},
             },
@@ -307,7 +342,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer"},
                 "name": {"type": "string"},
                 "env_id": {"type": "integer", "description": "Environment ID for variable resolution"},
@@ -323,7 +358,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Testplan ID"},
                 "name": {"type": "string"},
                 "env_id": {"type": "integer", "description": "Environment ID"},
@@ -341,7 +376,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Testplan ID"},
                 "case_ids": {"type": "array", "items": {"type": "integer"}, "description": "Testcase IDs to remove"},
             },
@@ -354,7 +389,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Testplan ID"},
                 "env_id": {"type": "integer", "description": "Override environment ID"},
             },
@@ -367,7 +402,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Testplan ID"},
             },
             "required": ["environment", "id"],
@@ -379,7 +414,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer"},
                 "status": {"type": "string", "enum": ["passed", "failed", "running", "error"]},
                 "trigger_type": {"type": "string", "enum": ["manual", "scheduled", "api"]},
@@ -395,7 +430,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Execution ID"},
             },
             "required": ["environment", "id"],
@@ -407,7 +442,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Execution ID"},
                 "status": {"type": "string", "enum": ["passed", "failed", "error"], "description": "Filter by case status"},
                 "page_size": {"type": "integer"},
@@ -421,7 +456,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer"},
                 "parent": {"type": "integer", "description": "Filter to direct children of this folder"},
             },
@@ -434,7 +469,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer"},
             },
             "required": ["environment", "project"],
@@ -446,7 +481,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer"},
                 "name": {"type": "string"},
                 "parent": {"type": "integer", "description": "Parent folder ID (omit for root)"},
@@ -461,7 +496,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Folder ID"},
                 "name": {"type": "string"},
                 "parent": {"type": "integer", "description": "New parent folder ID (use null/omit to move to root)"},
@@ -476,7 +511,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Folder ID"},
             },
             "required": ["environment", "id"],
@@ -488,7 +523,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer"},
             },
             "required": ["environment"],
@@ -500,7 +535,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer"},
                 "name": {"type": "string", "description": "Environment name"},
                 "variables": {"type": "string", "description": "JSON string of variables"},
@@ -514,7 +549,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "Environment ID"},
                 "variables": {"type": "string", "description": "JSON string of variables to merge (null value deletes a key)"},
             },
@@ -527,9 +562,9 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "from_environment": {"type": "string", "enum": ["nb-test", "nb-prod"], "description": "Source environment to export from"},
+                "from_environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"], "description": "Source environment to export from"},
                 "from_project_id": {"type": "integer", "description": "Source project ID"},
-                "to_environment": {"type": "string", "enum": ["nb-test", "nb-prod"], "description": "Target environment to import to"},
+                "to_environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"], "description": "Target environment to import to"},
                 "to_project_id": {"type": "integer", "description": "Target project ID"},
             },
             "required": ["from_environment", "from_project_id", "to_environment", "to_project_id"],
@@ -566,7 +601,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer"},
                 "search": {"type": "string"},
             },
@@ -579,7 +614,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "PerfPlan ID"},
             },
             "required": ["environment", "id"],
@@ -591,7 +626,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "project": {"type": "integer"},
                 "env": {"type": "integer", "description": "Ceres env ID (the {{host}}/etc. var set)"},
                 "name": {"type": "string"},
@@ -613,7 +648,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer"},
                 "name": {"type": "string"},
                 "description": {"type": "string"},
@@ -635,7 +670,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer"},
             },
             "required": ["environment", "id"],
@@ -647,7 +682,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "PerfPlan ID"},
                 "role": {"type": "string", "enum": ["setup", "transaction"]},
                 "transaction_name": {"type": "string", "description": "Required for role='transaction'; must match an entry in plan.transactions[]."},
@@ -662,7 +697,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "PerfPlan ID"},
                 "plan_case_ids": {"type": "array", "items": {"type": "integer"}},
             },
@@ -675,7 +710,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "PerfPlan ID"},
             },
             "required": ["environment", "id"],
@@ -687,7 +722,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "PerfPlan ID"},
                 "target_rate": {"type": "integer", "description": "Override target RPS"},
                 "duration_secs": {"type": "integer", "description": "Override duration"},
@@ -702,7 +737,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "plan_id": {"type": "integer"},
                 "limit": {"type": "integer"},
             },
@@ -715,7 +750,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "PerfRun ID"},
             },
             "required": ["environment", "id"],
@@ -727,7 +762,7 @@ TOOLS = [
         inputSchema={
             "type": "object",
             "properties": {
-                "environment": {"type": "string", "enum": ["nb-test", "nb-prod"]},
+                "environment": {"type": "string", "enum": ["local", "nb-test", "nb-prod"]},
                 "id": {"type": "integer", "description": "PerfRun ID"},
             },
             "required": ["environment", "id"],
