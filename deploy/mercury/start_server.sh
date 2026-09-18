@@ -9,4 +9,10 @@ sleep 5
 
 export MERCURY_SCHEDULER=true
 
-python3 manage.py runserver 0.0.0.0:8000 >> server_log.txt 2>&1
+exec gunicorn mercury.wsgi:application \
+  --bind 0.0.0.0:8000 \
+  --workers "${GUNICORN_WORKERS:-4}" \
+  --threads "${GUNICORN_THREADS:-4}" \
+  --timeout "${GUNICORN_TIMEOUT:-120}" \
+  --access-logfile - \
+  --error-logfile -
